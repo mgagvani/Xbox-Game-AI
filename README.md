@@ -1,90 +1,63 @@
-TensorKart
+Xbox Game AI
 ==========
 
-self-driving MarioKart with TensorFlow
-
-Driving a new (untrained) section of the Royal Raceway:
-
-![RoyalRaceway.gif](https://media.giphy.com/media/1435VvCosVezQY/giphy.gif)
-
-Driving Luigi Raceway:
-
-[![LuigiRacewayVideo](/screenshots/luigi_raceway.png?raw=true)](https://youtu.be/vrccd3yeXnc)
-
-The model was trained with:
-* 4 races on Luigi Raceway
-* 2 races on Kalimari Desert
-* 2 races on Mario Raceway
-
-With even a small training set the model is sometimes able to generalize to a new track (Royal Raceway seen above).
 
 
-Dependencies
-------------
-* `python` and `pip` then run `pip install -r requirements.txt`
-* `mupen64plus` (install via apt-get)
+Based on [TensorKart](https://github.com/kevinhughes27/TensorKart)[^1], adapted to use [PYXInput](https://github.com/bayangan1991/PYXInput) for control of Xbox/PC games. Has a CV-based method for driving an autonomous car inside of
 
+## Getting Started
+1. I would recommend using an Anaconda environment for easier library management. Once you have a Conda environment, enter it and clone this repository. Then, run `conda install --file requirements.txt` to install the necessary libraries.
+2. Install Intel OpenVINO, this is needed for the road segmentation AI model used by default.
+3. Out of the box, running `play.py` will attempt to find an image of a road from *Forza Horizon 3* and [](./samples/forza_road3/00121.png) and autonomously drive the car.
+4. So, turn on your game, such as *Forza Horizon*, preferably on a secondary monitor and get your car in a stable position. Then run `play.py` and you should start seeing the car move after a few seconds. 
 
-Recording Samples
------------------
-1. Start your emulator program (`mupen64plus`) and run Mario Kart 64
-2. Make sure you have a joystick connected and that `mupen64plus` is using the sdl input plugin
-3. Run `record.py`
-4. Make sure the graph responds to joystick input.
-5. Position the emulator window so that the image is captured by the program (top left corner)
-6. Press record and play through a level. You can trim some images off the front and back of the data you collect afterwards (by removing lines in `data.csv`).
+## Dependencies
+If you already have a Python installation you want to use, here are the major dependencies:
 
-![record](/screenshots/record_setup.png?raw=true)
+* Numpy
+* Tensorflow 2.x
+* Intel OpenVINO
+* PYXInput
+* MatPlotLib
+* OpenCV
 
-Notes
-- the GUI will stop updating while recording to avoid any slow downs.
-- double check the samples, sometimes the screenshot is the desktop instead. Remove the appropriate lines from the `data.csv` file
+## Standard AI Mode - Collect, Train, Test
+TensorKart, which this is based upon, was designed to collect screenshots along with matching gamepad data, and learn what images on the screen correspond with what controller inputs using a CNN(convolutional neural network).
 
+*Note*: The following is somewhat paraphrased from the TensorKart README. 
 
-Viewing Samples
----------------
-Run `python utils.py viewer samples/luigi_raceway` to view the samples
+* Recording Training Data
 
+    1. Start your game. 
+    2. Make sure you have an Xbox controller connected, either through Bluetooth or wired, to your PC.
+    3. Run `python record.py`, the graph should change according to user input. 
+    4. If the game window is not properly captured by the preview on the left, try changing `SRC_W`, `SRC_H`, `OFFSET_X`, and `OFFSET_Y` to match the postion your game is launching at. 
+    5. Press record to start recording samples. Press the button again to stop recording. 
 
-Preparing Training Data
------------------------
-Run `python utils.py prepare samples/*` with an array of sample directories to build an `X` and `y` matrix for training. (zsh will expand samples/* to all the directories. Passing a glob directly also works)
+*Note*: For most games, not all inputs are used, or are very important to the actual functioning of the game. This can result in extremely sparse data which is harder for AI models to use. To remove some controller inputs, try replacing line 301 of `utils.py ` with `load_mini_sample` or another method which operates in the same way as any of the other `load_sample()` methods. 
 
-`X` is a 3-Dimensional array of images
+* Preparing Training Data
 
-`y` is the expected joystick ouput as an array:
+  1. Run `python utils.py prepare samples/*` to build the input and output data sets for training. You might want to temporarily move "bad" datasets to another folder before doing this so they are not included.
 
-```
-  [0] joystick x axis
-  [1] joystick y axis
-  [2] button a
-  [3] button b
-  [4] button rb
-```
+* Training the Model
 
+  1. Run python train.py with the correct number of controller outputs under OUT_SHAPE. The program should run on an NVIDIA GPU automatically to speed up training time. It will automatically save the best model (based on validation loss) to a .h5 file. 
 
-Training
---------
-The `train.py` program will train a model using Google's TensorFlow framework and cuDNN for GPU acceleration. Training can take a while (~1 hour) depending on how much data you are training with and your system specs. The program will save the model to disk when it is done.
+* Testing
 
+  1. By default, `play.py` has some very low-level Windows-specific optimizations built in. Comment these out if you are not using Windows. 
+  2. Change line 242 to `actor.act(pic)`, this is the general purpose Actor which will work with a normal sample and a mini sample.
+  3. You can temporarily override the AI by pressing down on the RS (Right Stick).
+   
+## Future Improvements:
+- [ ] Add reinforcement learning model for automatically learning how to drive a virtual *Forza* car
+- [ ] Add an estimated perspective transform to find lane lines in *Forza* or other racing games
+- [ ] Convert Intel OpenVINO model to Tensorflow to remove a dependency
+- [ ] Streamline CNN-based process for different samples
+- [ ] Improve documentation
 
-Play
-----
-The `play.py` program will use the [`gym-mupen64plus`](https://github.com/bzier/gym-mupen64plus) environment to execute the trained agent against the MarioKart environment. The environment will provide the screenshots of the emulator. These images will be sent to the model to acquire the joystick command to send. The AI joystick commands can be overridden by holding the 'LB' button on the controller.
+## Contributing 🙈🙈
+Don't hesitate to **open a pull request or issue** with functionality you want to see added, or bugs you have found!
 
-
-Future Work / Ideas:
---------------------
-* Add a reinforcement layer based on lap time or other metrics so that the AI can start to teach itself now that it has a baseline. The environment currently provides a reward signal of `-1` per time-step, which gives the AI agent a metric to calculate its performance during each race (episode), the goal being to maximize reward and therefore, minimize overall race duration.
-* Could also have a shadow mode where the AI just draws out what it would do rather than sending actions. A real self driving car would have this and use it a lot before letting it take the wheel.
-* Deep learning is all about data; perhaps a community could form around collecting a large amount of data and pushing the performance of this AI.
-
-
-Special Thanks To
------------------
-* https://github.com/SullyChen/Autopilot-TensorFlow
-
-
-Contributing
-------------
-Open a PR! I promise I am friendly :)
+[^1]: TensorKart uses a Gym environment. If you already have an OpenAI Gym environment for your game, you might want to take a look at that. This is more useful for games with an Xbox controller input.
