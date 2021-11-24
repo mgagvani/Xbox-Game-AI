@@ -11,3 +11,6 @@ model.ckpt*
 html/**
 unused_data/**
 *.swp
+MORESTUFF.md
+*.un~
+*.*~
