@@ -23,6 +23,7 @@ def start():
 def find_xy(img):
     x = []
     y = []
+    num_road_pixels = np.count_nonzero(img > 0) # everything but BG
 
     for i,row in enumerate(img[::-1]): # upside down
     # print(type(row[0]))
@@ -40,7 +41,7 @@ def find_xy(img):
                 x.append(-1)
                 continue # no road here
 
-    return x,y
+    return x,y, num_road_pixels
 
 def read_img_from_num(img_number):
     image = cv2.imread(f"samples/forza_badriving/img_{img_number}.png")
@@ -79,7 +80,7 @@ def inference(image, ie, net, exec_net, output_layer_ir, input_layer_ir):
  
     img = segmentation_mask[0]
 
-    x, y = find_xy(img)
+    x, y, num_road_pixels = find_xy(img)
     
     # find first index where x = -1
     for i, xval in enumerate(x):
@@ -127,21 +128,20 @@ def inference(image, ie, net, exec_net, output_layer_ir, input_layer_ir):
         angle = -1 * (90+a)/90
     else:
         return "error"
-    # print(f"math.atan(slope) = {math.atan(slope)}")
-    # print(f"degrees( ) = {math.degrees(math.atan(slope))}")
-    # print(f"degrees( ) + 90 = {angle}")
     
     # angle = (x[0] - x[-1])/(y[0] - y[-1]) / 5 # NOTE This parameter should be manually tuned
     #print(angle)
     
     # has to be commented out when running in play.py
-    # xr = list(reversed(x))
-    # yr = list(reversed(y))         
-    # plt.imshow(img[::-1])
-    # plt.scatter(xr,yr,c="r",s=10)
-    # plt.scatter(xs,ys,c="b",s=15)
-    # plt.gca().invert_yaxis()
-    # plt.show()
+    xr = list(reversed(x))
+    yr = list(reversed(y))         
+    plt.imshow(img[::-1])
+    plt.scatter(xr,yr,c="r",s=10)
+    plt.scatter(xs,ys,c="b",s=15)
+    plt.gca().invert_yaxis()
+    plt.show()
+
+    print(100* num_road_pixels/(W*H)) # percent of image that is road
 #   
     try:
         return angle

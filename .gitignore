@@ -16,3 +16,4 @@ unused_data/**
 MORESTUFF.md
 *.un~
 *.*~
+.vscode/**
