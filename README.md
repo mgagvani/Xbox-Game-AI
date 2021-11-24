@@ -49,6 +49,17 @@ TensorKart, which this is based upon, was designed to collect screenshots along 
   1. By default, `play.py` has some very low-level Windows-specific optimizations built in. Comment these out if you are not using Windows. 
   2. Change line 242 to `actor.act(pic)`, this is the general purpose Actor which will work with a normal sample and a mini sample.
   3. You can temporarily override the AI by pressing down on the RS (Right Stick).
+
+
+### Categorical AI Mode
+I have also experimented with another, much more complex video game - [NBA2K21](https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3D60q2Ct1ksBw&psig=AOvVaw0V2BQOkFlplYgN9YUmMxjT&ust=1637846756968000&source=images&cd=vfe&ved=0CAkQjhxqFwoTCOCDkuyMsfQCFQAAAAAdAAAAABAE). However, there are so many inputs, which are pressed so infrequently, that a standard model learns to do nothing (output values are always very close to 0). So, I manually classified each picture into 8 categories, for what the AI *should* do. These are defined in `play.py`, under "High-Level Control Methods". I then used transfer learning on EfficientNet to get a model specific to my game. Currently this part is a work in progress.
+
+## What if I don't have the game on PC?
+You can also use games that you have on an Xbox with this code, using a handy app called **Xbox Console Companion**. It comes bundled with most Windows installations, if it is not, download it from the Windows store. 
+### How to use it
+1. Open Xbox Console Companion, and turn on your Xbox. Both the computer and XBox should be on the same network. 
+2. Go to "Connect to your Xbox One", and click on your Xbox. If it does not appear find the IP address of the Xbox and enter it. 
+3. You now have a live, 2-way stream from your computer to you Xbox! I have used this sucessfully to record lots of training data, it is quite reliable, even on a wireless network.
    
 ## Future Improvements:
 - [ ] Add reinforcement learning model for automatically learning how to drive a virtual *Forza* car
