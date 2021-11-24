@@ -37,12 +37,18 @@ def resize_image(img):
 
 
 class Screenshot(object):
-    SRC_W = 1920
-    SRC_H = 1080
+    # SRC_W = 1920
+    # SRC_H = 1080
+    SRC_W = 300
+    SRC_H = 300
     SRC_D = 3
 
-    OFFSET_X = 2240 # because of ultrawide monitor
-    OFFSET_Y = 0
+    # OFFSET_X = 2240 # because of ultrawide monitor
+    # OFFSET_Y = 0
+
+
+    OFFSET_X = 1920
+    OFFSET_Y = 780
 
 
 class Sample:

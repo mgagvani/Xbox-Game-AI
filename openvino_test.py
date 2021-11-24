@@ -19,11 +19,14 @@ def start():
 
     return ie, net, exec_net, output_layer_ir, input_layer_ir
 
+def find_roadarea(img, W, H):
+    num_road_pixels = np.count_nonzero(img > 0) # everything but BG
+    return 100* num_road_pixels/(W*H)
+
 # @jit(nopython = True, fastmath = True)
 def find_xy(img):
     x = []
     y = []
-    num_road_pixels = np.count_nonzero(img > 0) # everything but BG
 
     for i,row in enumerate(img[::-1]): # upside down
     # print(type(row[0]))
@@ -41,7 +44,7 @@ def find_xy(img):
                 x.append(-1)
                 continue # no road here
 
-    return x,y, num_road_pixels
+    return x,y
 
 def read_img_from_num(img_number):
     image = cv2.imread(f"samples/forza_badriving/img_{img_number}.png")
@@ -80,7 +83,7 @@ def inference(image, ie, net, exec_net, output_layer_ir, input_layer_ir):
  
     img = segmentation_mask[0]
 
-    x, y, num_road_pixels = find_xy(img)
+    x, y = find_xy(img)
     
     # find first index where x = -1
     for i, xval in enumerate(x):
@@ -141,7 +144,7 @@ def inference(image, ie, net, exec_net, output_layer_ir, input_layer_ir):
     plt.gca().invert_yaxis()
     plt.show()
 
-    print(100* num_road_pixels/(W*H)) # percent of image that is road
+    print(find_roadarea(img, W, H))
 #   
     try:
         return angle
