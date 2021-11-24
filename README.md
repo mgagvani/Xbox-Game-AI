@@ -1,9 +1,10 @@
 Xbox Game AI
 ==========
 
+**Our goal is to make this into a modular framework for making AIs with Xbox games that haven't been made compatible with Gym.**
 
 
-Based on [TensorKart](https://github.com/kevinhughes27/TensorKart)[^1], adapted to use [PYXInput](https://github.com/bayangan1991/PYXInput) for control of Xbox/PC games. Has a CV-based method for driving an autonomous car inside of
+Based on [TensorKart](https://github.com/kevinhughes27/TensorKart)[^1], adapted to use [PYXInput](https://github.com/bayangan1991/PYXInput) for control of Xbox/PC games. Has a CV-based method for driving an autonomous car inside of *Forza Horizon*. 
 
 ## Getting Started
 1. I would recommend using an Anaconda environment for easier library management. Once you have a Conda environment, enter it and clone this repository. Then, run `conda install --file requirements.txt` to install the necessary libraries.
