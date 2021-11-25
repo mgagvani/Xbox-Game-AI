@@ -1,1 +1,0 @@
-NOTE: Old data is stored in d:/manav/temp, in order to reduce the space used on the flash drive. Currently only the Forza data is on the flash drive. 
