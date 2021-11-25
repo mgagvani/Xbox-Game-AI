@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-
-
-
 import numpy as np
 
 import os
@@ -14,6 +11,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg as FigCanvas
 
 from PIL import ImageTk, Image
+import utils
 
 import sys
 
@@ -134,7 +132,7 @@ class MainWindow():
 
         # Create the Image
         return Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX')
-
+        
 
     def update_plot(self):
         self.plotData.append(self.controller_data) # adds to the end of the list
@@ -151,6 +149,7 @@ class MainWindow():
 
     def draw(self):
         # Image
+
         self.img.thumbnail((480,270), Image.ANTIALIAS) # Resize
         self.img_panel.img = ImageTk.PhotoImage(self.img)
         self.img_panel['image'] = self.img_panel.img

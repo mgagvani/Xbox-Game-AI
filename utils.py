@@ -51,9 +51,11 @@ class Screenshot(object):
     OFFSET_Y = 780
 
 
-class Sample:
-    IMG_W = 480
-    IMG_H = 270 # might be too small
+class Sample(object):
+    # IMG_W = 480
+    # IMG_H = 270 
+    IMG_W = 300
+    IMG_H = 300
     IMG_D = 3
 
 
