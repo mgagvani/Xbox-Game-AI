@@ -65,8 +65,8 @@ if __name__ == '__main__':
     
     # Load Training Data
     print("loading training data")
-    x_train = np.load("data/x_f1_7.npy")
-    y_train = np.load("data/y_f1_7.npy")
+    x_train = np.load("data/x_f8.npy")
+    y_train = np.load("data/y_f8.npy")
 
     print(x_train.shape[0], 'train samples')
 
@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
     model = create_model()
 
-    checkpoint = ModelCheckpoint("model_weights_f1_7.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    checkpoint = ModelCheckpoint("model_weights_f8.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     callbacks_list = [checkpoint]
     
     # model.compile(loss=customized_loss, optimizer="adam")

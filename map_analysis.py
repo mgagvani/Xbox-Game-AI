@@ -18,22 +18,18 @@ def analyze(img):
     target = img
     for i,row in enumerate(target):
         for j,pix in enumerate(row):
-            if(pix < 180):
+            # if(pix < 180):
+            #     target[i][j] = 0
+            # else:
+            #     target[i][j] = int(pix/(255/5))*(255/5)
+            if(0 <= pix <= 120): 
                 target[i][j] = 0
+            elif(121 <= pix <= 150):
+                target[i][j] = 175
+            elif(151 <= pix <= 250):
+                target[i][j] = 220
             else:
-                target[i][j] = int(pix/(255/5))*(255/5)
-
-    # kmeans clustering
-    # target = img.reshape((-1,1))
-    # target = np.float32(img)
-    # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-    # K = 3
-    # ret,label,center=cv2.kmeans(img,K,None,criteria,10,cv2.KMEANS_RANDOM_CENTERS)
-    # center = np.uint8(center)
-    # res = center[label.flatten()]
-    # target = res.reshape((img.shape))
-    # target = np.uint8(target)
-    #target = img
+                target[i][j] = 240
 
     print(target.shape)
     print(target.dtype)
@@ -42,14 +38,19 @@ def analyze(img):
     target = cv2.floodFill(target, mask, (144,166), 50)[1]
     # target[target != 50] = 0
     circle_points = []
-    for i in range(0, 360, 60): # below line, y, x or i, j
+    for i in range(0, 360, 30): # below line, y, x or i, j
         circle_points.append((142 + (30 * math.sin(math.sin(math.pi * i/180))), 179 + (30 * math.cos(math.pi * i/180))))
 
     for point in circle_points:
         i = int(point[0])
         j = int(point[1])
-        if(target[i][j] == 204):
+        if(target[i][j] == 220):
             target = cv2.floodFill(target, mask, (i, j), 100)[1]
+
+    for i,row in enumerate(target):
+        for j,pix in enumerate(row):
+            if(pix not in [50,100]):
+                target[i][j] = 255
 
     return target, circle_points
 
@@ -61,5 +62,7 @@ while True:
     img, circle_points = analyze(img)
     plt.imshow(img, cmap="gray")
     plt.scatter([point[0] for point in circle_points], [point[1] for point in circle_points])
+    plt.hist(img.ravel(), 256, (0,256))
+    
     plt.show()
     i+=20

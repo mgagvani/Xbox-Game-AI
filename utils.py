@@ -37,18 +37,18 @@ def resize_image(img):
 
 
 class Screenshot(object):
-    # SRC_W = 1920
-    # SRC_H = 1080
-    SRC_W = 300
-    SRC_H = 300
+    SRC_W = 1920
+    SRC_H = 1080
+    # SRC_W = 300
+    # SRC_H = 300
     SRC_D = 3
 
-    # OFFSET_X = 2240 # because of ultrawide monitor
-    # OFFSET_Y = 0
+    OFFSET_X = 2240 # because of ultrawide monitor
+    OFFSET_Y = 0
 
 
-    OFFSET_X = 1920
-    OFFSET_Y = 780
+    # OFFSET_X = 1920
+    # OFFSET_Y = 780
 
 
 class Sample(object):
@@ -314,7 +314,6 @@ def prepare(samples):
         
 
         # load, prepare and add images to X
-        """
         for image_file in image_files:
             image = imread(image_file)
             vec = resize_image(image)
@@ -324,7 +323,6 @@ def prepare(samples):
 
             del image
             gc.collect()
-        """
         # try to do some memory management
         # delete the current sample data since it has been appended to x and y
         del image_files
@@ -336,8 +334,8 @@ def prepare(samples):
     X = np.asarray(X)
     y = np.concatenate(y)
 
-    np.save("data/x_f1_7", X)
-    np.save("data/y_f1_7", y)
+    np.save("data/x_f8", X)
+    np.save("data/y_f8", y)
 
     print("Done!")
 
