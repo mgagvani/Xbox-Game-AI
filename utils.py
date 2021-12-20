@@ -29,10 +29,6 @@ import threading
 def resize_image(img):
     im = resize(img, (Sample.IMG_H, Sample.IMG_W, Sample.IMG_D))
     im_arr = im.reshape((Sample.IMG_H, Sample.IMG_W, Sample.IMG_D))
-
-    del im
-    gc.collect()
-    
     return im_arr
 
 
