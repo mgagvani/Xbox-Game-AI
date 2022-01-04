@@ -5,6 +5,7 @@ import gc
 import glob
 import array
 import os
+import random
 
 try:
     # import cupy as np
@@ -21,6 +22,7 @@ from skimage.io import imread
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
+import cv2
 from inputs import get_gamepad
 import math
 import threading
@@ -266,7 +268,7 @@ def viewer(sample):
 
 
 # prepare training data
-def prepare(samples):
+def prepare(samples, augment=True):
     print(f"Preparing data from {samples[0]}")
 
     # X = []
@@ -313,6 +315,19 @@ def prepare(samples):
         for image_file in image_files:
             image = imread(image_file)
             vec = resize_image(image)
+
+            if augment:
+                ## Augmentation
+                # Mirror image 
+                if random.choice([True, False]):
+                    vec = vec[:, ::-1, :] # horizontally mirror image
+                    y[-1][0] *= -1 # negate steering value
+                # Crop image (by adding black rectangle to mask extraneous details)
+                vec = cv2.rectangle(vec, (0,0), (480, 60), (0, 0, 0), -1)
+                # Add random jitter to steering values
+                y[-1][0] += np.random.normal(loc=0, scale=0.05)
+                # TODO Add Bias
+
             X[idx] = vec
 
             idx += 1
@@ -345,4 +360,6 @@ if __name__ == '__main__':
     if sys.argv[1] == 'viewer':
         viewer(sys.argv[2])
     elif sys.argv[1] == 'prepare':
+        prepare(sys.argv[2:], augment=False)
+    elif sys.argv[1] == 'prepare_augment':
         prepare(sys.argv[2:])
