@@ -41,7 +41,7 @@ class Screenshot(object):
     # SRC_H = 300
     SRC_D = 3
 
-    OFFSET_X = 2240 # because of ultrawide monitor
+    OFFSET_X = 320 # because of ultrawide monitor
     OFFSET_Y = 0
 
 
@@ -50,10 +50,10 @@ class Screenshot(object):
 
 
 class Sample(object):
-    # IMG_W = 480
-    # IMG_H = 270 
-    IMG_W = 300
-    IMG_H = 300
+    IMG_W = 480
+    IMG_H = 270 
+    # IMG_W = 300
+    # IMG_H = 300
     IMG_D = 3
 
 
@@ -209,6 +209,11 @@ def load_racing_sample(sample):
     joystick_values = np.loadtxt(sample + '/data.csv', delimiter=',', usecols=(1,5,6)) 
     return image_files, joystick_values
 
+def load_steering_sample(sample):
+    image_files = np.loadtxt(sample + '/data.csv', delimiter=',', dtype=str, usecols=(0,))
+    joystick_values = np.loadtxt(sample + '/data.csv', delimiter=',', usecols=(1,)) 
+    return image_files, joystick_values
+
 def load_imgs(sample):
     image_files = np.loadtxt(sample + '/data.csv', delimiter=',', dtype=str, usecols=(0,))
     return image_files
@@ -271,7 +276,6 @@ def viewer(sample):
 def prepare(samples, augment=True):
     print(f"Preparing data from {samples[0]}")
 
-    # X = []
     y = []
 
     paths = [os.path.normpath(i) for i in glob.glob(samples[0])]
@@ -292,7 +296,6 @@ def prepare(samples, augment=True):
     print(numpics)
 
     X = np.empty(shape=(numpics,Sample.IMG_H,Sample.IMG_W,3),dtype=np.uint8)
-    # y = np.empty(shape=(numpics,16))
 
     idx = 0 # Current image write index - from 0 to numpics
 
@@ -303,8 +306,8 @@ def prepare(samples, augment=True):
         # load sample
         # image_files, joystick_values = load_sample(os.path.normpath(sample))
 
-        # load categorical sample
-        image_files, joystick_values = load_racing_sample(os.path.normpath(sample))
+        # load condensed sample
+        image_files, joystick_values = load_steering_sample(os.path.normpath(sample))
 
         # add joystick values to y
         print(f"Joystick values shape {joystick_values.shape}")
@@ -318,12 +321,14 @@ def prepare(samples, augment=True):
 
             if augment:
                 ## Augmentation
-                # Mirror image 
+                # Mirror image  
                 if random.choice([True, False]):
                     vec = vec[:, ::-1, :] # horizontally mirror image
                     y[-1][0] *= -1 # negate steering value
                 # Crop image (by adding black rectangle to mask extraneous details)
-                vec = cv2.rectangle(vec, (0,0), (480, 60), (0, 0, 0), -1)
+                # print(vec.dtype, vec.shape)
+                # sys.exit(1)
+                vec = cv2.rectangle(img=vec.astype(np.uint8), pt1=(int(0),int(0)), pt2=(int(480), int(60)), color=[0, 0, 0], thickness=cv2.FILLED)
                 # Add random jitter to steering values
                 y[-1][0] += np.random.normal(loc=0, scale=0.05)
                 # TODO Add Bias
@@ -345,8 +350,8 @@ def prepare(samples, augment=True):
     X = np.asarray(X)
     y = np.concatenate(y)
 
-    np.save("data/x_f8", X)
-    np.save("data/y_f8", y)
+    np.save("data/x_fh5", X)
+    np.save("data/y_fh5", y)
 
     print("Done!")
 

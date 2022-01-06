@@ -16,7 +16,7 @@ from utils import Sample
 # Global variable
 # OUT_SHAPE = 5
 # OUT_SHAPE  = 16
-OUT_SHAPE  = 3 # Change to number of variables used in output
+OUT_SHAPE  = 1 # Change to number of variables used in output
 INPUT_SHAPE = (Sample.IMG_H, Sample.IMG_W, Sample.IMG_D)
 
 
@@ -65,22 +65,22 @@ if __name__ == '__main__':
     
     # Load Training Data
     print("loading training data")
-    x_train = np.load("data/x_f8.npy")
-    y_train = np.load("data/y_f8.npy")
+    x_train = np.load("data/x_fh5.npy")
+    y_train = np.load("data/y_fh5.npy")
 
     print(x_train.shape[0], 'train samples')
 
     # Training loop variables
-    epochs = 192
+    epochs = 50
     batch_size = 64
 
     model = create_model()
 
-    checkpoint = ModelCheckpoint("model_weights_f8.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    checkpoint = ModelCheckpoint("model_weights_fh5.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     callbacks_list = [checkpoint]
     
     # model.compile(loss=customized_loss, optimizer="adam")
     # model.compile(loss="mean_squared_error", optimizer="adam")
-    model.compile(loss="mean_squared_error", optimizer=optimizers.Adam(lr=0.01))
+    model.compile(loss="mean_squared_error", optimizer=optimizers.Adam(lr=0.001))
     print(model.summary())
     model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_split=0.2, callbacks=callbacks_list)
