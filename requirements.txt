@@ -35,7 +35,7 @@ marshmallow==3.10.0
 matplotlib==3.4.1
 mss==6.1.0
 networkx==2.5.1
-numpy==1.19.5
+numpy==1.21.0
 oauthlib==3.1.1
 opencv-python==4.5.2.52
 opt-einsum==3.3.0
