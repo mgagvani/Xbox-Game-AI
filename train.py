@@ -81,6 +81,6 @@ if __name__ == '__main__':
     
     # model.compile(loss=customized_loss, optimizer="adam")
     # model.compile(loss="mean_squared_error", optimizer="adam")
-    model.compile(loss="mean_squared_error", optimizer=optimizers.Adam(lr=0.001))
+    model.compile(loss="mean_squared_error", optimizer=optimizers.Adam(lr=0.01))
     print(model.summary())
     model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_split=0.2, callbacks=callbacks_list)

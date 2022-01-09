@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from ctypes import resize
+import cv2
 import numpy as np
 
 import os
@@ -28,7 +30,7 @@ else:
     import ttk
     import tkMessageBox
 
-from utils import Screenshot, XboxController
+from utils import Sample, Screenshot, XboxController, Screenshotter
 
 IMAGE_SIZE = (1920, 1080)
 IDLE_SAMPLE_RATE = 500
@@ -41,7 +43,7 @@ class MainWindow():
 
     def __init__(self):
         self.root = tk.Tk()
-        self.sct = mss.mss()
+        self.screenshot = Screenshotter()
 
         self.root.title('Data Acquisition')
         self.root.geometry("750x350")
@@ -115,25 +117,13 @@ class MainWindow():
 
 
     def poll(self):
-        self.img = self.take_screenshot()
+        self.img = self.screenshot.take_screenshot()
         self.controller_data = self.controller.read()
         self.update_plot()
 
         if self.recording == True:
             self.save_data()
-            self.t += 1
-
-
-    def take_screenshot(self):
-        # Get raw pixels from the screen
-        sct_img = self.sct.grab({  "top": Screenshot.OFFSET_Y,
-                                  "left": Screenshot.OFFSET_X,
-                                 "width": Screenshot.SRC_W,
-                                "height": Screenshot.SRC_H})
-
-        # Create the Image
-        return Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX')
-        
+            self.t += 1        
 
     def update_plot(self):
         self.plotData.append(self.controller_data) # adds to the end of the list
@@ -142,7 +132,7 @@ class MainWindow():
 
     def save_data(self):
         image_file = self.outputDir+'/'+'img_'+str(self.t)+IMAGE_TYPE
-        self.img.save(image_file)
+        cv2.imwrite(image_file, self.img)
 
         # write csv line
         self.outfile.write( image_file + ',' + ','.join(map(str, self.controller_data)) + '\n' )
@@ -151,8 +141,8 @@ class MainWindow():
     def draw(self):
         # Image
 
-        self.img.thumbnail((480,270), Image.ANTIALIAS) # Resize
-        self.img_panel.img = ImageTk.PhotoImage(self.img)
+        resized_img = cv2.resize(self.img, (Sample.IMG_W, Sample.IMG_H))
+        self.img_panel.img = ImageTk.PhotoImage(Image.fromarray(resized_img))
         self.img_panel['image'] = self.img_panel.img
 
         # Joystick

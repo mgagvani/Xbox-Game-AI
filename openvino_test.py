@@ -50,7 +50,7 @@ def read_img_from_num(img_number):
     image = cv2.imread(f"samples/forza_badriving/img_{img_number}.png")
     return image
 
-def inference(image, ie, net, exec_net, output_layer_ir, input_layer_ir):
+def inference(image, ie, net, exec_net, output_layer_ir, input_layer_ir, return_image=False):
     # The segmentation network expects images in BGR format
     # image = cv2.imread("data/empty_road_mapillary.jpg")
     # image = read_img_from_num(int(input("Image number: ")))
@@ -82,6 +82,10 @@ def inference(image, ie, net, exec_net, output_layer_ir, input_layer_ir):
     # plt.show()
  
     img = segmentation_mask[0]
+
+    if return_image:
+        resized_image[img == 0] = [0, 0, 0]
+        return resized_image
 
     x, y = find_xy(img)
     

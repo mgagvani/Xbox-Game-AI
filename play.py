@@ -5,12 +5,13 @@ from PIL import Image
 import mss
 from mss import screenshot
 import tensorflow as tf
-from utils import Screenshot, resize_image, XboxController
+from utils import Screenshot, resize_image, XboxController, Screenshotter
+import cv2
 # from termcolor import cprint
 
 # import gym
 # import gym_mupen64plus
-# from train import create_model
+from train import create_model
 import openvino_test
 
 try:
@@ -23,27 +24,14 @@ except ImportError:
 import pyxinput
 import ctypes
 
-class Screenshotter(object):
-    def __init__(self):
-        self.sct = mss.mss()
-        
-    def take_screenshot(self):
-        # Get raw pixels from the screen
-        sct_img = self.sct.grab({  "top": Screenshot.OFFSET_Y,
-                                "left": Screenshot.OFFSET_X,
-                                "width": Screenshot.SRC_W,
-                                "height": Screenshot.SRC_H})
-        # Create the Image
-        return Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX')
-
 
 # Play
 class Actor(object):
 
     def __init__(self):
         # Load in model from train.py and load in the trained weights
-        # self.model = create_model(keep_prob=1) # no dropout
-        # self.model.load_weights('model_weights_f1_7.h5') # CHANGE THIS WITH A NEW MODEL 
+        self.model = create_model(keep_prob=1) # no dropout
+        self.model.load_weights('model_weights_fh5.h5') # CHANGE THIS WITH A NEW MODEL 
 
         # Init contoller for manual override
         self.real_controller = XboxController()
@@ -143,12 +131,12 @@ class Actor(object):
     def control_racing(self, joystick):
         self.controller.set_value("AxisLx",joystick[0])
         # self.controller.set_value("TriggerL",joystick[1])
-        self.controller.set_value("TriggerR",joystick[1])
+        self.controller.set_value("TriggerR", 0.5)
 
     def cv_act_racing(self, img): 
         manual_override = self.real_controller.RightThumb == 1
         if not manual_override:
-            angle = openvino_test.inference(np.array(img), self.ie, self.net, self.exec_net, self.output_layer_ir, self.input_layer_ir)
+            angle = openvino_test.inference(img, self.ie, self.net, self.exec_net, self.output_layer_ir, self.input_layer_ir)
             if angle == "error":
                 joystick = [-self.lastvalue, 0.3]
                 print(f"ERROR: Last angle is used: {-self.lastvalue}")
@@ -175,9 +163,9 @@ class Actor(object):
         if not manual_override:
         # if True:
             ## Look
-            print("debug")
+            # print("debug")
             # print(img)
-            vec = resize_image(np.array(img))
+            vec = img
             vec = np.expand_dims(vec, axis=0) # expand dimensions for predict, it wants (1,66,200,3) not (66, 200, 3)
             ## Think
             joystick = self.model.predict(vec, batch_size=1)[0]
@@ -239,5 +227,5 @@ if __name__ == '__main__':
     print('actor ready!')
     while True:
         pic = screenshot.take_screenshot()
-        actor.cv_act_racing(pic)
+        actor.act(pic)
 

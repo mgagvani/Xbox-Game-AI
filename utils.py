@@ -6,6 +6,8 @@ import glob
 import array
 import os
 import random
+from PIL import Image
+import mss
 
 try:
     # import cupy as np
@@ -21,11 +23,40 @@ from skimage.io import imread
 # comment these out when using WSL
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+import openvino_test
 
 import cv2
 from inputs import get_gamepad
 import math
 import threading
+
+class Screenshotter(object):
+    def __init__(self):
+        self.sct = mss.mss()
+        self.ie, self.net, self.exec_net, self.output_layer_ir, self.input_layer_ir = openvino_test.start()
+        
+    def take_screenshot(self):
+        # Get raw pixels from the screen
+        sct_img = self.sct.grab({  "top":Screenshot.OFFSET_Y,
+                                "left": Screenshot.OFFSET_X,
+                                "width": Screenshot.SRC_W,
+                                "height": Screenshot.SRC_H})
+        # Create the Image
+        temp = np.array(Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX'))
+        #Perform segmentation
+        temp = self.convert_to_segmented(temp)
+
+        # DEBUG
+        import matplotlib.pyplot as plt
+
+        # Resize
+        vec = cv2.resize(temp, (Sample.IMG_W, Sample.IMG_H), interpolation=cv2.INTER_LINEAR_EXACT)
+        # Augmentations
+        # vec = cv2.rectangle(img=vec.astype(np.uint8), pt1=(int(0),int(0)), pt2=(int(480), int(90)), color=[0, 0, 0], thickness=cv2.FILLED)
+        return vec
+
+    def convert_to_segmented(self, img):
+        return openvino_test.inference(img, self.ie, self.net, self.exec_net, self.output_layer_ir, self.input_layer_ir, True) 
 
 
 def resize_image(img):
@@ -322,15 +353,15 @@ def prepare(samples, augment=True):
             if augment:
                 ## Augmentation
                 # Mirror image  
-                if random.choice([True, False]):
-                    vec = vec[:, ::-1, :] # horizontally mirror image
-                    y[-1][0] *= -1 # negate steering value
+                ### if random.choice([True, False]):
+                ###     vec = vec[:, ::-1, :] # horizontally mirror image
+                ###     y[-1][0] *= -1 # negate steering value
                 # Crop image (by adding black rectangle to mask extraneous details)
                 # print(vec.dtype, vec.shape)
                 # sys.exit(1)
-                vec = cv2.rectangle(img=vec.astype(np.uint8), pt1=(int(0),int(0)), pt2=(int(480), int(60)), color=[0, 0, 0], thickness=cv2.FILLED)
+                vec = cv2.rectangle(img=vec.astype(np.uint8), pt1=(int(0),int(0)), pt2=(int(480), int(90)), color=[0, 0, 0], thickness=cv2.FILLED)
                 # Add random jitter to steering values
-                y[-1][0] += np.random.normal(loc=0, scale=0.05)
+                ### y[-1][0] += np.random.normal(loc=0, scale=0.01)
                 # TODO Add Bias
 
             X[idx] = vec
