@@ -12,6 +12,8 @@ Based on [TensorKart](https://github.com/kevinhughes27/TensorKart)[^1], adapted 
 3. Out of the box, running `play.py` will attempt to find an image of a road from *Forza Horizon 3* and [](./samples/forza_road3/00121.png) and autonomously drive the car.
 4. So, turn on your game, such as *Forza Horizon*, preferably on a secondary monitor and get your car in a stable position. Then run `play.py` and you should start seeing the car move after a few seconds. 
 
+*Note*: Make sure to use Python 3.6 if you are using `requirements.txt`. 
+
 ## Dependencies
 If you already have a Python installation you want to use, here are the major dependencies:
 
@@ -69,7 +71,7 @@ You can also use games that you have on an Xbox with this code, using a handy ap
 - [ ] Streamline CNN-based process for different samples
 - [ ] Improve documentation
 
-## Contributing 🙈🙈
+## Contributing 
 Don't hesitate to **open a pull request or issue** with functionality you want to see added, or bugs you have found!
 
 [^1]: TensorKart uses a Gym environment. If you already have an OpenAI Gym environment for your game, you might want to take a look at that. This is more useful for games with an Xbox controller input.
