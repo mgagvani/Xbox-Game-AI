@@ -133,6 +133,13 @@ class Actor(object):
         # self.controller.set_value("TriggerL",joystick[1])
         self.controller.set_value("TriggerR", 0.5)
 
+    def findarrows_act_racing(self, img):
+        manual_override = self.real_controller.RightThumb == 1
+        if not manual_override:
+            steering = openvino_test.find_arrows(img)
+            joystick = [steering, 0.4]
+            self.control_racing(joystick)
+
     def cv_act_racing(self, img): 
         manual_override = self.real_controller.RightThumb == 1
         if not manual_override:
@@ -227,5 +234,5 @@ if __name__ == '__main__':
     print('actor ready!')
     while True:
         pic = screenshot.take_screenshot()
-        actor.act(pic)
+        actor.findarrows_act_racing(pic)
 

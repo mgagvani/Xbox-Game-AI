@@ -147,8 +147,8 @@ class MainWindow():
 
         # Joystick
         x = np.asarray(self.plotData)
-        #print(x)
-        #print(x[:,0])
+        # print(x)
+        # print(x[:,0])
         self.axes.clear()
         self.axes.plot(range(0,self.plotMem), x[:,0], 'r')
         self.axes.plot(range(0,self.plotMem), x[:,1], 'b')

@@ -44,7 +44,7 @@ class Screenshotter(object):
         # Create the Image
         temp = np.array(Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX'))
         #Perform segmentation
-        temp = self.convert_to_segmented(temp)
+        # temp = self.convert_to_segmented(temp)
 
         # DEBUG
         import matplotlib.pyplot as plt

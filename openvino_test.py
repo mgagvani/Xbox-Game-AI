@@ -6,7 +6,19 @@ import sys
 from openvino.inference_engine import IECore
 import math
 
-# from numba import jit
+# from numba import d
+
+def find_arrows(img):
+    r = img[:,:,0]
+    g = img[:,:,1]
+    b = img[:,:,2]
+    binary_blue = cv2.threshold(b, 127, 255, cv2.THRESH_BINARY)[1]
+    eroded_blue = cv2.erode(binary_blue, np.ones((6, 6), np.uint8), cv2.BORDER_REFLECT) 
+    average_x = np.mean(np.nonzero(eroded_blue)[1])
+    print(average_x)
+    # plt.imshow(eroded_blue)
+    # plt.show()
+    return (average_x - 256)/512
 
 def start():
     ie = IECore()
@@ -23,7 +35,7 @@ def find_roadarea(img, W, H):
     num_road_pixels = np.count_nonzero(img > 0) # everything but BG
     return 100* num_road_pixels/(W*H)
 
-# @jit(nopython = True, fastmath = True)
+# @d(nopython = True, fastmath = True)
 def find_xy(img):
     x = []
     y = []
