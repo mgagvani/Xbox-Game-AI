@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-from ctypes import resize
 import cv2
 import numpy as np
 
 import os
 import shutil
-import mss
 import matplotlib
 matplotlib.use('TkAgg')
 from datetime import datetime
