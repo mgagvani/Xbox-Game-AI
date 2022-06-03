@@ -2,7 +2,7 @@
 aiofiles==0.6.0
 ajsonrpc==1.1.0
 astunparse==1.6.3
-bottle==0.12.19
+bottle==0.12.20
 bs4==0.0.1
 cachetools==4.2.2
 certifi==2020.12.5
