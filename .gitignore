@@ -2,6 +2,7 @@ samples/**
 MarioKart64.z64
 samples_note.txt
 waypoints.txt
+temporary.txt
 data/*
 *.pyc
 *.npy

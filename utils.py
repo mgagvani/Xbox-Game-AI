@@ -8,6 +8,7 @@ import os
 import random
 from PIL import Image
 import mss
+import pandas as pd
 
 try:
     # import cupy as np
@@ -23,7 +24,7 @@ from skimage.io import imread
 # comment these out when using WSL
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-import openvino_test
+
 
 import cv2
 from inputs import get_gamepad
@@ -32,6 +33,7 @@ import threading
 
 class Screenshotter(object):
     def __init__(self):
+        import openvino_test
         self.sct = mss.mss()
         self.ie, self.net, self.exec_net, self.output_layer_ir, self.input_layer_ir = openvino_test.start()
         
@@ -47,7 +49,7 @@ class Screenshotter(object):
         # temp = self.convert_to_segmented(temp)
 
         # DEBUG
-        import matplotlib.pyplot as plt
+        # import matplotlib.pyplot as plt
 
         # Resize
         vec = cv2.resize(temp, (Sample.IMG_W, Sample.IMG_H), interpolation=cv2.INTER_LINEAR_EXACT)
@@ -249,6 +251,29 @@ def load_imgs(sample):
     image_files = np.loadtxt(sample + '/data.csv', delimiter=',', dtype=str, usecols=(0,))
     return image_files
 
+def load_balanced_sample(samples, col="LX"):
+    """
+    Samples: List of all CSV files to concat and balance
+    Col: Column to balance by. By default, "LX"
+    """
+    cols = ["Name", "LX", "LY", "RX", "RY", "LT", "RT"]
+    for i in range(10):
+        cols.append(str(i))
+    dataframes = [pd.read_csv(sample) for sample in samples]
+    for f in dataframes:
+        f.columns = cols
+    concat = pd.concat(dataframes, axis=0, ignore_index=True)
+    print(concat)
+    concat.hist(column=["LX", "RT"], bins=200)
+    plt.show()
+    df = concat
+    # find concat fraction to chop off (assume left and right are equal)
+    fract = df[(df[col] > 0.2) & (df[col] < 1.0)].shape[0]/df.shape[0]
+    new_df = df[(df[col] < -0.2) | (df[col] > 0.2) | (abs(df[col]) < 0.2).sample(frac=fract/3)]
+    new_df.hist(column=["LX", "RT"], bins=200)
+    print(new_df)
+    plt.show()
+    return new_df["Name"], new_df[col]
 
 # training data viewer
 def viewer(sample):
@@ -302,6 +327,30 @@ def viewer(sample):
         plt.pause(0.01) # seconds
         i += 1
 
+# prepare training data balanced along axis 
+# this ensures the "zero" position does not dominate
+def balance(samples):
+    paths = [os.path.normpath(i)+"\\data.csv" for i in glob.glob(samples[0])]
+    image_files, joystick_values = load_balanced_sample(paths)
+
+    X = np.empty(shape=(image_files.size,Sample.IMG_H,Sample.IMG_W,3),dtype=np.uint8)
+    y = []
+
+    for i, filename in enumerate(image_files):
+        image = imread(filename)
+        vec = resize_image(image)
+        X[i] = vec
+    for val in joystick_values:
+        y.append(val)
+
+    print("Saving to file...")
+    X = np.asarray(X)
+    y = np.asarray(y)
+
+    np.save("data/x_bal", X)
+    np.save("data/y_bal", y)
+
+    print("Done!")
 
 # prepare training data
 def prepare(samples, augment=True):
@@ -397,5 +446,5 @@ if __name__ == '__main__':
         viewer(sys.argv[2])
     elif sys.argv[1] == 'prepare':
         prepare(sys.argv[2:], augment=False)
-    elif sys.argv[1] == 'prepare_augment':
-        prepare(sys.argv[2:])
+    elif sys.argv[1] == 'balance':
+        balance(sys.argv[2:])
