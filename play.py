@@ -11,8 +11,8 @@ import cv2
 
 # import gym
 # import gym_mupen64plus
-from train import create_model
-import openvino_test
+# from train import commaai_model, create_model, create_new_model
+# import openvino_test
 
 try:
     import numpy as np
@@ -28,10 +28,11 @@ import ctypes
 # Play
 class Actor(object):
 
-    def __init__(self):
-        # Load in model from train.py and load in the trained weights
-        self.model = create_model(keep_prob=1) # no dropout
-        self.model.load_weights('model_weights_fh5.h5') # CHANGE THIS WITH A NEW MODEL 
+    def __init__(self, load_model=True):
+        if load_model:
+            # Load in model from train.py and load in the trained weights
+            self.model = commaai_model(keep_prob=1) # no dropout
+            self.model.load_weights('model_weights_bal.h5') # CHANGE THIS WITH A NEW MODEL 
 
         # Init contoller for manual override
         self.real_controller = XboxController()
@@ -45,7 +46,7 @@ class Actor(object):
 
         self.anglefactor = 1/3 # coeff for steering (CV)
 
-        self.ie, self.net, self.exec_net, self.output_layer_ir, self.input_layer_ir = openvino_test.start()
+        # self.ie, self.net, self.exec_net, self.output_layer_ir, self.input_layer_ir = openvino_test.start()
 
         self.lastvalue = 0 # in case there is an error
 
@@ -133,6 +134,11 @@ class Actor(object):
         # self.controller.set_value("TriggerL",joystick[1])
         self.controller.set_value("TriggerR", 0.5)
 
+    def control_throttle(self, throttle):
+        manual_override = self.real_controller.RightThumb == 1
+        if not manual_override:
+            self.controller.set_value("TriggerR", throttle)
+
     def findarrows_act_racing(self, img):
         manual_override = self.real_controller.RightThumb == 1
         if not manual_override:
@@ -187,14 +193,14 @@ class Actor(object):
             #     else:
             #         print("Error")
 
-            joystick = joystick * 3
-            for i,num in enumerate(joystick):
-                if joystick[i] > 1:
-                    joystick[i] = 1
-                elif joystick[i] < -1:
-                    joystick[i] = -1
-                else:
-                    pass
+            # joystick = joystick * 3
+            # for i,num in enumerate(joystick):
+            #     if joystick[i] > 1:
+            #         joystick[i] = 1
+            #     elif joystick[i] < -1:
+            #         joystick[i] = -1
+            #     else:
+            #         pass
             
             print(joystick)
 
@@ -221,7 +227,7 @@ class Actor(object):
 if __name__ == '__main__':
     # set this program to higher priority (for realtime shooting etc)
     kernel32 = ctypes.windll.kernel32
-    kernel32.SetThreadPriority(kernel32.GetCurrentThread(), 14) 
+    kernel32.SetThreadPriority(kernel32.GetCurrentThread(), 31) 
 
     #disable gpu
     gpus = tf.config.list_physical_devices("GPU")
@@ -234,5 +240,5 @@ if __name__ == '__main__':
     print('actor ready!')
     while True:
         pic = screenshot.take_screenshot()
-        actor.findarrows_act_racing(pic)
+        actor.act(pic)
 

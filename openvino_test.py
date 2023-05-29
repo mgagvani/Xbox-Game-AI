@@ -59,7 +59,7 @@ def find_xy(img):
     return x,y
 
 def read_img_from_num(img_number):
-    image = cv2.imread(f"samples/forza_badriving/img_{img_number}.png")
+    image = cv2.imread(f"samples/slowdrive5ms/img_{img_number}.png")
     return image
 
 def inference(image, ie, net, exec_net, output_layer_ir, input_layer_ir, return_image=False):

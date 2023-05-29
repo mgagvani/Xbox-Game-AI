@@ -33,9 +33,9 @@ import threading
 
 class Screenshotter(object):
     def __init__(self):
-        import openvino_test
+        # import openvino_test
         self.sct = mss.mss()
-        self.ie, self.net, self.exec_net, self.output_layer_ir, self.input_layer_ir = openvino_test.start()
+        # self.ie, self.net, self.exec_net, self.output_layer_ir, self.input_layer_ir = openvino_test.start()
         
     def take_screenshot(self):
         # Get raw pixels from the screen
@@ -57,8 +57,8 @@ class Screenshotter(object):
         # vec = cv2.rectangle(img=vec.astype(np.uint8), pt1=(int(0),int(0)), pt2=(int(480), int(90)), color=[0, 0, 0], thickness=cv2.FILLED)
         return vec
 
-    def convert_to_segmented(self, img):
-        return openvino_test.inference(img, self.ie, self.net, self.exec_net, self.output_layer_ir, self.input_layer_ir, True) 
+    # def convert_to_segmented(self, img):
+    #     return openvino_test.inference(img, self.ie, self.net, self.exec_net, self.output_layer_ir, self.input_layer_ir, True) 
 
 
 def resize_image(img):
@@ -83,8 +83,8 @@ class Screenshot(object):
 
 
 class Sample(object):
-    IMG_W = 480
-    IMG_H = 270 
+    IMG_W = 240 # 480
+    IMG_H = 135 # 270 
     # IMG_W = 300
     # IMG_H = 300
     IMG_D = 3
@@ -251,7 +251,7 @@ def load_imgs(sample):
     image_files = np.loadtxt(sample + '/data.csv', delimiter=',', dtype=str, usecols=(0,))
     return image_files
 
-def load_balanced_sample(samples, col="LX"):
+def load_balanced_sample(samples, col="LX", bias=0.2):
     """
     Samples: List of all CSV files to concat and balance
     Col: Column to balance by. By default, "LX"
@@ -268,8 +268,9 @@ def load_balanced_sample(samples, col="LX"):
     plt.show()
     df = concat
     # find concat fraction to chop off (assume left and right are equal)
-    fract = df[(df[col] > 0.2) & (df[col] < 1.0)].shape[0]/df.shape[0]
-    new_df = df[(df[col] < -0.2) | (df[col] > 0.2) | (abs(df[col]) < 0.2).sample(frac=fract/3)]
+    fract = df[(df[col] > 0.1) & (df[col] < 1.0)].shape[0]/df.shape[0]
+    fract = fract * bias
+    new_df = df[(df[col] < -0.1) | (df[col] > 0.1) | (abs(df[col]) < 0.1).sample(frac=fract)]
     new_df.hist(column=["LX", "RT"], bins=200)
     print(new_df)
     plt.show()
@@ -347,8 +348,11 @@ def balance(samples):
     X = np.asarray(X)
     y = np.asarray(y)
 
-    np.save("data/x_bal", X)
-    np.save("data/y_bal", y)
+    print(X.shape)
+    print(y.shape)
+
+    np.save("data/x_sbal", X)
+    np.save("data/y_sbal", y)
 
     print("Done!")
 
@@ -430,8 +434,8 @@ def prepare(samples, augment=True):
     X = np.asarray(X)
     y = np.concatenate(y)
 
-    np.save("data/x_fh5", X)
-    np.save("data/y_fh5", y)
+    np.save("data/x_nor", X)
+    np.save("data/y_nor", y)
 
     print("Done!")
 
