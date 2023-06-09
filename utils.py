@@ -3,7 +3,7 @@
 import sys
 import gc
 import glob
-import array
+import time
 import os
 import random
 from PIL import Image
@@ -276,6 +276,59 @@ def load_balanced_sample(samples, col="LX", bias=0.2):
     plt.show()
     return new_df["Name"], new_df[col]
 
+def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=False):
+    # load data
+    # X = np.load(x_pth)
+    y = np.load(y_pth)
+
+    # plot y data
+    plt.plot(y)
+
+
+    # plot predictions
+    if predictions and (not categorical):
+        from train import commaai_model, create_model, create_new_model
+        # load model
+        model = create_model(keep_prob=1.0)
+        model.load_weights(model_pth)
+        # load X data
+        X = np.load(x_pth)
+        # predict
+        y_preds = []
+        t0 = time.perf_counter()
+        for i, x in enumerate(X):
+            print(i, "/", len(X)-1, end="\r")
+            y_pred = model.predict(np.expand_dims(x, axis=0), batch_size=1)[0]
+            y_preds.append(y_pred)
+        t1 = time.perf_counter()
+        print("time per prediction:", (t1-t0)/len(X), "seconds")
+        # plot
+        plt.plot(y_preds)  
+    elif predictions and categorical:
+        from train import categorical_model, categorical_model_predict
+        # load model
+        model = categorical_model()
+        model.load_weights(model_pth)
+        # load X data
+        X = np.load(x_pth)
+        # predict
+        y_preds = []
+        t0 = time.perf_counter()
+        for i, x in enumerate(X):
+            print(i, "/", len(X)-1, end="\r")
+            y_pred = categorical_model_predict(model, np.expand_dims(x, axis=0))
+            y_preds.append(y_pred)
+        t1 = time.perf_counter()
+        print("time per prediction:", (t1-t0)/len(X), "seconds")
+        # plot
+        plt.plot(y_preds)
+    plt.show()
+
+def show_pic(x_pth, idx=0):
+    X = np.load(x_pth) * 255
+    plt.imshow(X[idx])
+    plt.show()
+
 # training data viewer
 def viewer(sample):
     image_files, joystick_values = load_sample(sample)
@@ -401,8 +454,15 @@ def prepare(samples, augment=True):
         # load, prepare and add images to X
         for image_file in image_files:
             image = imread(image_file)
+            # debug show image
+            plt.imshow(image)
+            plt.show()
             vec = resize_image(image)
-
+            # debug show image
+            plt.imshow(vec)
+            plt.show()
+            
+            '''
             if augment:
                 ## Augmentation
                 # Mirror image  
@@ -416,6 +476,7 @@ def prepare(samples, augment=True):
                 # Add random jitter to steering values
                 ### y[-1][0] += np.random.normal(loc=0, scale=0.01)
                 # TODO Add Bias
+            '''
 
             X[idx] = vec
 
@@ -452,3 +513,11 @@ if __name__ == '__main__':
         prepare(sys.argv[2:], augment=False)
     elif sys.argv[1] == 'balance':
         balance(sys.argv[2:])
+    elif sys.argv[1] == 'plot':
+        plot_data(sys.argv[2])
+    elif sys.argv[1] == 'plotpredictions':
+        plot_data(y_pth=sys.argv[2], predictions=True, model_pth=sys.argv[3], x_pth=sys.argv[4], categorical=bool(sys.argv[5]))
+    elif sys.argv[1] == 'show':
+        show_pic(sys.argv[2], int(sys.argv[3]))
+    else:
+        print("(viewer|prepare|balance|plot|plotpredictions|show)")

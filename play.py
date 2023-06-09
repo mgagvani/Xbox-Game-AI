@@ -131,8 +131,8 @@ class Actor(object):
 
     def control_racing(self, joystick):
         self.controller.set_value("AxisLx",joystick[0])
-        # self.controller.set_value("TriggerL",joystick[1])
-        self.controller.set_value("TriggerR", 0.5)
+        self.controller.set_value("TriggerL",joystick[1])
+        # self.controller.set_value("TriggerR", 0.5)
 
     def control_throttle(self, throttle):
         manual_override = self.real_controller.RightThumb == 1

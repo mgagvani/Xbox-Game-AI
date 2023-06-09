@@ -68,19 +68,13 @@ def create_model_2(keep_prob = 0.3):
     x = keras.layers.Activation('relu')(x)
 
     # Output layer
-    predictions = Dense(NUM_CLASSES, activation="softmax")(x)
+    predictions = keras.layers.Dense(NUM_CLASSES, activation="softmax")(x)
 
-    model_final = Model(inputs = model.input, outputs = predictions)
+    # Compile
+    model = keras.Model(inputs=model.input, outputs=predictions)
 
-    print(model_final.summary())
-    # model_final = keras.Model(base_model.input, outputs)
-
-    # print(x.summary())
-    
-    return model_final
-        
-    
-
+    # print(model.summary())
+    return model
 
 if __name__ == "__main__":
     #Set GPU options

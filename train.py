@@ -8,8 +8,8 @@ import tensorflow as tf
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Flatten, Lambda, ELU
-from tensorflow.keras.layers import Conv2D, Convolution2D, RandomBrightness, RandomContrast
-from tensorflow.keras import optimizers
+from tensorflow.keras.layers import Conv2D, Convolution2D
+from tensorflow.keras import optimizers, Model, Input
 from tensorflow.keras import backend as K
 from tensorflow.keras.callbacks import ModelCheckpoint
 from utils import Sample
@@ -102,6 +102,66 @@ def commaai_model(keep_prob):
 
   return model
 
+def categorical_model(keep_prob=0.8):
+    drop = 1 - keep_prob
+    img_in = Input(shape=INPUT_SHAPE, name='img_in')
+    x = Conv2D(24, 5, 2, padding='same')(img_in)  # Update this line
+    x = Dropout(drop)(x)
+    x = Conv2D(32, 5, 2, padding='same')(x)
+    x = Dropout(drop)(x)
+    x = Conv2D(64, 5, 2, padding='same')(x)
+    x = Dropout(drop)(x)
+    x = Conv2D(64, 3, 2, padding='same')(x)
+    x = Dropout(drop)(x)
+    x = Conv2D(64, 3, 1, padding='same')(x)
+    x = Dropout(drop)(x)
+    x = Flatten(name='flattened')(x)
+    x = Dense(100, activation='relu', name="dense_1")(x)
+    x = Dropout(drop)(x)
+    x = Dense(50, activation='relu', name="dense_2")(x)
+    x = Dropout(drop)(x)
+    # Categorical output of the angle into 15 bins
+    angle_out = Dense(15, activation='softmax', name='angle_out')(x)
+    model = Model(inputs=[img_in], outputs=[angle_out], name='categorical')
+    return model
+
+def categorical_model_predict(loaded_model, input):
+    pred = loaded_model.predict(input)
+    # print(pred)
+    # onehot --> -1 to 1 (15 bins)
+    return (np.argmax(pred) / 7) - 1.0 # -1 to 1
+
+def train_model(x_train, y_train, _model=create_model, batch_size=128, epochs=10):
+    model = _model()
+
+    checkpoint = ModelCheckpoint("model_weights_bal.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    callbacks_list = [checkpoint]
+    
+    # model.compile(loss=customized_loss, optimizer="adam")
+    # model.compile(loss="mean_squared_error", optimizer="adam")
+    model.compile(loss="mean_squared_error", optimizer=optimizers.SGD(lr=0.1))
+    print(model.summary())
+    model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_split=0.2, callbacks=callbacks_list)
+
+def train_categorical_model(x_train, y_train, _model=categorical_model, batch_size=128, epochs=10):
+    # Binning and one-hot encoding
+    print("Binning and one-hot encoding")
+    num_bins = 15
+    bin_edges = np.linspace(-1, 1, num_bins + 1)
+    y_binned = np.digitize(y_train, bin_edges)
+    y_train = np.eye(num_bins)[y_binned - 1] 
+    print("y_train shape: ", y_train.shape)
+
+    model = _model()
+
+    checkpoint = ModelCheckpoint("model_weights_bal_cat.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    callbacks_list = [checkpoint]
+
+    model.compile(loss="categorical_crossentropy", optimizer="adam")
+    print(model.summary())
+    model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_split=0.2, callbacks=callbacks_list)
+
+
 if __name__ == '__main__':
     #Set GPU options
     gpus = tf.config.list_physical_devices("GPU")
@@ -118,15 +178,10 @@ if __name__ == '__main__':
 
     # Training loop variables
     epochs = 200
-    batch_size = 128
+    batch_size = 128  
 
-    model = create_new_model()
+    # Train model
+    # train_model(x_train, y_train, _model=create_model, batch_size=batch_size, epochs=epochs)
+    train_categorical_model(x_train, y_train, _model=categorical_model, batch_size=batch_size, epochs=epochs)
 
-    checkpoint = ModelCheckpoint("model_weights_bal.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-    callbacks_list = [checkpoint]
     
-    # model.compile(loss=customized_loss, optimizer="adam")
-    # model.compile(loss="mean_squared_error", optimizer="adam")
-    model.compile(loss="mean_squared_error", optimizer=optimizers.SGD(lr=0.1))
-    print(model.summary())
-    model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_split=0.2, callbacks=callbacks_list)
