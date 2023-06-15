@@ -3,6 +3,8 @@
 
 from random import Random
 import numpy as np
+import cv2
+import matplotlib.pyplot as plt
     
 import tensorflow as tf
 
@@ -161,6 +163,43 @@ def train_categorical_model(x_train, y_train, _model=categorical_model, batch_si
     print(model.summary())
     model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_split=0.2, callbacks=callbacks_list)
 
+def load_data_from_samples(paths):
+    # for each path, load y data from data.csv
+    # 1st column is picture path, 2nd column is steering angle
+
+    # determine number of samples
+    num_samples = 0
+    for path in paths:
+        with open(path + "/data.csv") as f:
+            num_samples += sum(1 for _line in f)
+    
+    # initialize x and y arrays
+    x = np.empty((num_samples, INPUT_SHAPE[0], INPUT_SHAPE[1], INPUT_SHAPE[2]), dtype=np.float32)
+    y = np.empty((num_samples), dtype=np.float32)
+
+    # load data from each path
+    i = 0
+    for path in paths:
+        with open(path + "/data.csv") as f:
+            for line in f:
+                tokens = line.split(",")
+                # print(f"[DEBUG] {path + '/' + tokens[0]}")
+                img = cv2.imread(tokens[0])
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                # resize image
+                img = cv2.resize(img, (INPUT_SHAPE[1], INPUT_SHAPE[0]))
+                if i % 500 == 0:
+                    plt.imshow(img)
+                    plt.title(tokens[1]+" "+str(i))
+                    plt.show()
+                img = img.astype(np.float32)
+                img = img / 127.5 - 1.0
+                x[i] = img
+                y[i] = float(tokens[1])
+                print(f"sample {i} of {num_samples}", end="\r")
+                i += 1
+    
+    return x, y
 
 if __name__ == '__main__':
     #Set GPU options
@@ -171,8 +210,9 @@ if __name__ == '__main__':
     
     # Load Training Data
     print("loading training data")
-    x_train = np.load("data/x_sbal.npy")
-    y_train = np.load("data/y_sbal.npy")
+    # x_train = np.load("data/x_sbal.npy")
+    # y_train = np.load("data/y_sbal.npy")
+    x_train, y_train = load_data_from_samples(["samples/forza9",])
 
     print(x_train.shape[0], 'train samples')
 

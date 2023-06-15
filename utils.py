@@ -276,10 +276,24 @@ def load_balanced_sample(samples, col="LX", bias=0.2):
     plt.show()
     return new_df["Name"], new_df[col]
 
+def ask_for_samples():
+    from train import load_data_from_samples
+    # ask for samples
+    samples = eval(input("Enter sample paths to load: "))
+    # load data
+    return load_data_from_samples(samples)
+
 def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=False):
     # load data
     # X = np.load(x_pth)
-    y = np.load(y_pth)
+    if input("Load data from samples? (y/n): ") == "y":
+        print("Loading data from samples...")
+        X, y = ask_for_samples()
+    else:
+        print("Loading data from NPY files...")
+        y = np.load(y_pth)
+        # load X data
+        X = np.load(x_pth)
 
     # plot y data
     plt.plot(y)
@@ -291,8 +305,6 @@ def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=
         # load model
         model = create_model(keep_prob=1.0)
         model.load_weights(model_pth)
-        # load X data
-        X = np.load(x_pth)
         # predict
         y_preds = []
         t0 = time.perf_counter()
@@ -309,8 +321,6 @@ def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=
         # load model
         model = categorical_model()
         model.load_weights(model_pth)
-        # load X data
-        X = np.load(x_pth)
         # predict
         y_preds = []
         t0 = time.perf_counter()
@@ -455,12 +465,12 @@ def prepare(samples, augment=True):
         for image_file in image_files:
             image = imread(image_file)
             # debug show image
-            plt.imshow(image)
-            plt.show()
+            # plt.imshow(image)
+            # plt.show()
             vec = resize_image(image)
             # debug show image
-            plt.imshow(vec)
-            plt.show()
+            # plt.imshow(vec)
+            # plt.show()
             
             '''
             if augment:
@@ -495,8 +505,8 @@ def prepare(samples, augment=True):
     X = np.asarray(X)
     y = np.concatenate(y)
 
-    np.save("data/x_nor", X)
-    np.save("data/y_nor", y)
+    np.save("data/x_f10s", X)
+    np.save("data/y_f10s", y)
 
     print("Done!")
 

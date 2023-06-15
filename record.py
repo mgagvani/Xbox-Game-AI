@@ -112,6 +112,7 @@ class MainWindow():
 
         if not self.pause_timer:
             self.root.after(self.rate, self.on_timer)
+            self.root.update() # or self.root.update_idletasks()???
 
 
     def poll(self):
@@ -130,6 +131,8 @@ class MainWindow():
 
     def save_data(self):
         image_file = self.outputDir+'/'+'img_'+str(self.t)+IMAGE_TYPE
+        # convert to RGB
+        self.img = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB)
         cv2.imwrite(image_file, self.img)
 
         # write csv line
