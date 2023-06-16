@@ -32,7 +32,7 @@ from utils import Sample, Screenshot, XboxController, Screenshotter
 
 IMAGE_SIZE = (1920, 1080)
 IDLE_SAMPLE_RATE = 500
-SAMPLE_RATE = 50
+SAMPLE_RATE = 0
 IMAGE_TYPE = ".jpg" # or .png
 
 class MainWindow():
@@ -112,7 +112,7 @@ class MainWindow():
 
         if not self.pause_timer:
             self.root.after(self.rate, self.on_timer)
-            self.root.update() # or self.root.update_idletasks()???
+            # self.root.update() # or self.root.update_idletasks()???
 
 
     def poll(self):
@@ -130,9 +130,10 @@ class MainWindow():
 
 
     def save_data(self):
+        # print(f'[DEBUG] Saving data at {self.t}...')
+        print(self.t, end='\r')
         image_file = self.outputDir+'/'+'img_'+str(self.t)+IMAGE_TYPE
         # convert to RGB
-        self.img = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB)
         cv2.imwrite(image_file, self.img)
 
         # write csv line

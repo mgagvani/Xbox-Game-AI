@@ -5,6 +5,7 @@ from random import Random
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
+from tqdm.auto import tqdm
     
 import tensorflow as tf
 
@@ -188,10 +189,10 @@ def load_data_from_samples(paths):
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 # resize image
                 img = cv2.resize(img, (INPUT_SHAPE[1], INPUT_SHAPE[0]))
-                if i % 500 == 0:
-                    plt.imshow(img)
-                    plt.title(tokens[1]+" "+str(i))
-                    plt.show()
+                # if i % 500 == 0:
+                #     plt.imshow(img)
+                #     plt.title(tokens[1]+" "+str(i))
+                #     plt.show()
                 img = img.astype(np.float32)
                 img = img / 127.5 - 1.0
                 x[i] = img

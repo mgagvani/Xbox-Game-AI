@@ -35,26 +35,42 @@ class Screenshotter(object):
     def __init__(self):
         # import openvino_test
         self.sct = mss.mss()
+        self.vec = None
+
+        self._monitor_thread = threading.Thread(target=self._get_image, args=())
+        self._monitor_thread.daemon = True
+        self._monitor_thread.start()
         # self.ie, self.net, self.exec_net, self.output_layer_ir, self.input_layer_ir = openvino_test.start()
         
+    def _get_image(self):
+        while True:
+            # Get raw pixels from the screen
+            t1 = time.perf_counter()
+            sct_img = self.sct.grab({  "top":Screenshot.OFFSET_Y,
+                                    "left": Screenshot.OFFSET_X,
+                                    "width": Screenshot.SRC_W,
+                                    "height": Screenshot.SRC_H})
+            # Create the Image
+            # print(f'[DEBUG] Screenshot took {time.perf_counter() - t1} seconds')
+            temp = np.array(Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX'))
+            #Perform segmentations
+            # temp = self.convert_to_segmented(temp)
+
+            # DEBUG
+            # import matplotlib.pyplot as plt
+
+            # Resize
+            self.vec = cv2.resize(temp, (Sample.IMG_W, Sample.IMG_H), interpolation=cv2.INTER_LINEAR_EXACT)
+            self.vec = cv2.cvtColor(self.vec, cv2.COLOR_BGR2RGB)
+            # Augmentations
+            # vec = cv2.rectangle(img=vec.astype(np.uint8), pt1=(int(0),int(0)), pt2=(int(480), int(90)), color=[0, 0, 0], thickness=cv2.FILLED)
+            # return vec
+
     def take_screenshot(self):
-        # Get raw pixels from the screen
-        sct_img = self.sct.grab({  "top":Screenshot.OFFSET_Y,
-                                "left": Screenshot.OFFSET_X,
-                                "width": Screenshot.SRC_W,
-                                "height": Screenshot.SRC_H})
-        # Create the Image
-        temp = np.array(Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX'))
-        #Perform segmentation
-        # temp = self.convert_to_segmented(temp)
-
-        # DEBUG
-        # import matplotlib.pyplot as plt
-
-        # Resize
-        vec = cv2.resize(temp, (Sample.IMG_W, Sample.IMG_H), interpolation=cv2.INTER_LINEAR_EXACT)
-        # Augmentations
-        # vec = cv2.rectangle(img=vec.astype(np.uint8), pt1=(int(0),int(0)), pt2=(int(480), int(90)), color=[0, 0, 0], thickness=cv2.FILLED)
+        if self.vec is None:
+            time.sleep(0.1)
+        # copy
+        vec = self.vec.copy()
         return vec
 
     # def convert_to_segmented(self, img):
@@ -284,6 +300,8 @@ def ask_for_samples():
     return load_data_from_samples(samples)
 
 def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=False):
+    categorical = True if categorical == "y" else False
+    
     # load data
     # X = np.load(x_pth)
     if input("Load data from samples? (y/n): ") == "y":
@@ -298,6 +316,10 @@ def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=
     # plot y data
     plt.plot(y)
 
+    if categorical:
+        print("Categorical data")
+    else:
+        print("Continuous data")
 
     # plot predictions
     if predictions and (not categorical):
@@ -318,6 +340,11 @@ def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=
         plt.plot(y_preds)  
     elif predictions and categorical:
         from train import categorical_model, categorical_model_predict
+        import tensorflow as tf
+        # cuda memory growth
+        gpus = tf.config.list_physical_devices("GPU")
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu,True)
         # load model
         model = categorical_model()
         model.load_weights(model_pth)
@@ -526,7 +553,7 @@ if __name__ == '__main__':
     elif sys.argv[1] == 'plot':
         plot_data(sys.argv[2])
     elif sys.argv[1] == 'plotpredictions':
-        plot_data(y_pth=sys.argv[2], predictions=True, model_pth=sys.argv[3], x_pth=sys.argv[4], categorical=bool(sys.argv[5]))
+        plot_data(y_pth=sys.argv[2], predictions=True, model_pth=sys.argv[3], x_pth=sys.argv[4], categorical=(sys.argv[5]))
     elif sys.argv[1] == 'show':
         show_pic(sys.argv[2], int(sys.argv[3]))
     else:
