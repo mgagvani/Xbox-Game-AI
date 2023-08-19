@@ -32,7 +32,7 @@ from utils import Sample, Screenshot, XboxController, Screenshotter
 
 IMAGE_SIZE = (1920, 1080)
 IDLE_SAMPLE_RATE = 500
-SAMPLE_RATE = 0
+SAMPLE_RATE = 200
 IMAGE_TYPE = ".jpg" # or .png
 
 class MainWindow():

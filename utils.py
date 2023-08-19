@@ -44,6 +44,7 @@ class Screenshotter(object):
         
     def _get_image(self):
         while True:
+            time.sleep(0.02)
             # Get raw pixels from the screen
             t1 = time.perf_counter()
             sct_img = self.sct.grab({  "top":Screenshot.OFFSET_Y,
@@ -362,8 +363,20 @@ def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=
     plt.show()
 
 def show_pic(x_pth, idx=0):
-    X = np.load(x_pth) * 255
-    plt.imshow(X[idx])
+    # load only one image from samples
+    samples = eval(input("Enter sample paths to load: "))
+    # do NOT load entire array - find the image path and load it
+    image_files = []
+    for sample in samples:
+        print(sample, end="\r")
+        x = np.loadtxt(sample + '/data.csv', delimiter=',', dtype=str, usecols=(0,))
+        for a in x:
+            image_files.append(a)
+    print(f'[DEBUG] {len(image_files)} images found')
+    # load image
+    img = imread(image_files[idx])
+    # show image
+    plt.imshow(img)
     plt.show()
 
 # training data viewer
@@ -551,7 +564,7 @@ if __name__ == '__main__':
     elif sys.argv[1] == 'balance':
         balance(sys.argv[2:])
     elif sys.argv[1] == 'plot':
-        plot_data(sys.argv[2])
+        plot_data(y_pth=sys.argv[2])
     elif sys.argv[1] == 'plotpredictions':
         plot_data(y_pth=sys.argv[2], predictions=True, model_pth=sys.argv[3], x_pth=sys.argv[4], categorical=(sys.argv[5]))
     elif sys.argv[1] == 'show':

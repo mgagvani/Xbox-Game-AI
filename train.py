@@ -5,7 +5,6 @@ from random import Random
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-from tqdm.auto import tqdm
     
 import tensorflow as tf
 
@@ -157,10 +156,11 @@ def train_categorical_model(x_train, y_train, _model=categorical_model, batch_si
 
     model = _model()
 
-    checkpoint = ModelCheckpoint("model_weights_bal_cat.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    checkpoint = ModelCheckpoint("model_weights_c1.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     callbacks_list = [checkpoint]
 
-    model.compile(loss="categorical_crossentropy", optimizer="adam")
+    # default lr=0.001, make it smaller
+    model.compile(loss="categorical_crossentropy", optimizer=optimizers.Adam(lr=0.00002))
     print(model.summary())
     model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_split=0.2, callbacks=callbacks_list)
 
@@ -213,7 +213,7 @@ if __name__ == '__main__':
     print("loading training data")
     # x_train = np.load("data/x_sbal.npy")
     # y_train = np.load("data/y_sbal.npy")
-    x_train, y_train = load_data_from_samples(["samples/forza9",])
+    x_train, y_train = load_data_from_samples(["samples/forza4003", "samples/forza4004"])
 
     print(x_train.shape[0], 'train samples')
 
