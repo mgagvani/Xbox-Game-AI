@@ -302,6 +302,12 @@ def ask_for_samples():
 
 def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=False):
     categorical = True if categorical == "y" else False
+
+    # check if model exists
+    if os.path.exists(model_pth):
+        print(f"Model {model_pth} found")
+    else:
+        raise FileNotFoundError(f"Model {model_pth} not found")
     
     # load data
     # X = np.load(x_pth)
@@ -314,6 +320,11 @@ def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=
         # load X data
         X = np.load(x_pth)
 
+    if (not categorical) and input("Mediapipe? (y/n): ") == "y":
+        mediapipe = True
+    else:
+        mediapipe = False
+
     # plot y data
     plt.plot(y)
 
@@ -323,7 +334,7 @@ def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=
         print("Continuous data")
 
     # plot predictions
-    if predictions and (not categorical):
+    if predictions and (not categorical) and (not mediapipe):
         from train import commaai_model, create_model, create_new_model
         # load model
         model = create_model(keep_prob=1.0)
@@ -339,15 +350,16 @@ def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=
         print("time per prediction:", (t1-t0)/len(X), "seconds")
         # plot
         plt.plot(y_preds)  
-    elif predictions and categorical:
-        from train import categorical_model, categorical_model_predict
+    elif predictions and categorical and (not mediapipe):
+        from train import categorical_model, autoencoder_model, categorical_model_predict
         import tensorflow as tf
         # cuda memory growth
         gpus = tf.config.list_physical_devices("GPU")
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu,True)
         # load model
-        model = categorical_model()
+        # model = categorical_model()
+        model = autoencoder_model()
         model.load_weights(model_pth)
         # predict
         y_preds = []
@@ -360,6 +372,49 @@ def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=
         print("time per prediction:", (t1-t0)/len(X), "seconds")
         # plot
         plt.plot(y_preds)
+    elif mediapipe:
+        # load tflite model
+        import mediapipe as mp
+        from mediapipe.tasks import python
+        from mediapipe.tasks.python.components import processors
+        from mediapipe.tasks.python import vision
+        print("Running mediapipe model...")
+
+        # STEP 2: Create an ImageClassifier object.
+        base_options = python.BaseOptions(model_asset_path=model_pth)
+        options = vision.ImageClassifierOptions(
+            base_options=base_options, max_results=4)
+        classifier = vision.ImageClassifier.create_from_options(options)
+
+        # image = mp.Image.create_from_file(image_name)
+        # classification_result = classifier.classify(image)
+        # predict
+        y_preds = []
+        t0 = time.perf_counter()
+        for i, x in enumerate(X):
+            print(i, "/", len(X)-1, end="\r")
+            # predict
+
+            # convert from float 1.0 to uint8 255
+            x = (x*255).astype(np.uint8)
+            # debug show image
+            # plt.imshow(x)
+            # plt.show()
+
+            image = mp.Image(image_format=mp.ImageFormat.SRGB, data=x)
+            classification_result = classifier.classify(image).classifications[0]
+            # for i in classification_result.categories:
+            #     print(i)
+        
+            # convert idx to float
+            y_pred = float(classification_result.categories[0].index) / 7.0 - 1.0
+            y_preds.append(y_pred)
+        t1 = time.perf_counter()
+        print("time per prediction:", (t1-t0)/len(X), "seconds")
+        # plot
+        plt.plot(y_preds)
+    else:
+        raise ValueError(f'Invalid arguments: predictions={predictions}, categorical={categorical}, mediapipe={mediapipe}')
     plt.show()
 
 def show_pic(x_pth, idx=0):
@@ -555,6 +610,83 @@ def prepare(samples, augment=True):
     
     return
 
+def load_data_from_samples(paths):
+    INPUT_SHAPE = (Sample.IMG_H, Sample.IMG_W, Sample.IMG_D)
+
+    # for each path, load y data from data.csv
+    # 1st column is picture path, 2nd column is steering angle
+
+    # determine number of samples
+    num_samples = 0
+    for path in paths:
+        with open(path + "/data.csv") as f:
+            num_samples += sum(1 for _line in f)
+    
+    # initialize x and y arrays
+    x = np.empty((num_samples, INPUT_SHAPE[0], INPUT_SHAPE[1], INPUT_SHAPE[2]), dtype=np.float32)
+    y = np.empty((num_samples), dtype=np.float32)
+
+    # load data from each path
+    i = 0
+    for path in paths:
+        with open(path + "/data.csv") as f:
+            for line in f:
+                tokens = line.split(",")
+                # print(f"[DEBUG] {path + '/' + tokens[0]}")
+                img = cv2.imread(tokens[0])
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                # resize image
+                img = cv2.resize(img, (INPUT_SHAPE[1], INPUT_SHAPE[0]))
+                # if i % 500 == 0:
+                #     plt.imshow(img)
+                #     plt.title(tokens[1]+" "+str(i))
+                #     plt.show()
+                img = img.astype(np.float32)
+                img = img / 127.5 - 1.0
+                x[i] = img
+                y[i] = float(tokens[1])
+                print(f"sample {i} of {num_samples}", end="\r")
+                i += 1
+    
+    return x, y
+
+def build_sorted_dataset(dataset_path: str, samples_paths: list):
+    # build sorted dataset at samples/path
+    # for each sample, put into a folder based on the steering value
+    # 15 buckets from -1 to 1
+    # closest value goes in that bucket
+
+    # load samples
+    x, y = load_data_from_samples(samples_paths)
+
+    # create folders
+    buckets = [i/7 for i in range(-7, 8)]
+    path_suffixes = [chr(int(i*7 + 72)) for i in buckets]
+
+    # fix dataset_path  
+    dataset_path = os.path.normpath(dataset_path)
+
+    for suffix in path_suffixes:
+        os.makedirs(os.path.join(dataset_path, suffix))
+    
+    # sort data
+    # hist = plt.hist(y, bins=14)
+    print("Sorting data...")
+    for i, img in enumerate(x):
+        print(i, "/", len(x)-1, end="\r")
+        # find closest bucket
+        closest = min(buckets, key=lambda x:abs(x-y[i])) # minimize distance between bucket and steering value
+        # save image to bucket
+        # debug
+        # plt.imshow(img)
+        # plt.title(f"{i} {y[i]} {closest} {np.max(img)}")
+        # plt.show()
+        # flip image to BGR for cv2
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(os.path.join(dataset_path, chr(int(closest*7 + 72)), str(i)+".jpg"), img*255)
+
+    # plt.show()
+
 
 if __name__ == '__main__':
     if sys.argv[1] == 'viewer':
@@ -569,5 +701,7 @@ if __name__ == '__main__':
         plot_data(y_pth=sys.argv[2], predictions=True, model_pth=sys.argv[3], x_pth=sys.argv[4], categorical=(sys.argv[5]))
     elif sys.argv[1] == 'show':
         show_pic(sys.argv[2], int(sys.argv[3]))
+    elif sys.argv[1] == 'sort':
+        build_sorted_dataset(sys.argv[2], sys.argv[3:])
     else:
-        print("(viewer|prepare|balance|plot|plotpredictions|show)")
+        print("(viewer|prepare|balance|plot|plotpredictions|show|sort)")

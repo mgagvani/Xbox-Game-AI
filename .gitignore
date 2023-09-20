@@ -12,6 +12,7 @@ model.ckpt*
 *.ogv
 *.mp4
 *.h5
+*.png
 html/**
 unused_data/**
 *.swp
@@ -19,3 +20,4 @@ MORESTUFF.md
 *.un~
 *.*~
 .vscode/**
+exported_model/**

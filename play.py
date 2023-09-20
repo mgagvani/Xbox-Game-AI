@@ -11,7 +11,7 @@ import cv2
 
 # import gym
 # import gym_mupen64plus
-# from train import commaai_model, create_model, create_new_model
+from train import *
 # import openvino_test
 
 try:
@@ -31,8 +31,9 @@ class Actor(object):
     def __init__(self, load_model=True):
         if load_model:
             # Load in model from train.py and load in the trained weights
-            self.model = commaai_model(keep_prob=1) # no dropout
-            self.model.load_weights('model_weights_bal.h5') # CHANGE THIS WITH A NEW MODEL 
+            # self.model = commaai_model(keep_prob=1) # no dropout
+            self.model = categorical_model()
+            self.model.load_weights('model_weights_cat2.h5') # CHANGE THIS WITH A NEW MODEL 
 
         # Init contoller for manual override
         self.real_controller = XboxController()
@@ -130,8 +131,12 @@ class Actor(object):
         self.controller.set_value("BtnX",joystick[7])
 
     def control_racing(self, joystick):
+        if type(joystick) is not float:
+            self.controller.set_value("AxisLx", joystick)
+            return
         self.controller.set_value("AxisLx",joystick[0])
-        self.controller.set_value("TriggerL",joystick[1])
+        if len(joystick) == 2:
+            self.controller.set_value("TriggerL",joystick[1])
         # self.controller.set_value("TriggerR", 0.5)
 
     def control_throttle(self, throttle):
@@ -181,7 +186,8 @@ class Actor(object):
             vec = img
             vec = np.expand_dims(vec, axis=0) # expand dimensions for predict, it wants (1,66,200,3) not (66, 200, 3)
             ## Think
-            joystick = self.model.predict(vec, batch_size=1)[0]
+            # joystick = self.model.predict(vec, batch_size=1)[0]
+            joystick = categorical_model_predict(self.model, vec)
             
             # for i,num in enumerate(joystick):
             #     if joystick[i] >= self.thresh: # predicting 1, positive

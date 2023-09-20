@@ -12,6 +12,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg as FigCanvas
 
 from PIL import ImageTk, Image
 import utils
+from telemetry import *
 
 import sys
 
@@ -49,6 +50,9 @@ class MainWindow():
 
         # Init controller
         self.controller = XboxController()
+
+        # Init telemetry
+        self.telemetry = get_waypoints()
 
          # Create GUI
         self.create_main_panel()
@@ -124,6 +128,8 @@ class MainWindow():
             self.save_data()
             self.t += 1        
 
+        self.telem_data = next(self.telemetry)
+
     def update_plot(self):
         self.plotData.append(self.controller_data) # adds to the end of the list
         self.plotData.pop(0) # remove the first item in the list, ie the oldest
@@ -136,8 +142,8 @@ class MainWindow():
         # convert to RGB
         cv2.imwrite(image_file, self.img)
 
-        # write csv line
-        self.outfile.write( image_file + ',' + ','.join(map(str, self.controller_data)) + '\n' )
+        # write csv line with telemetry data
+        self.outfile.write( image_file + ',' + ','.join(map(str, self.controller_data)) + ",".join(map(str, self.telem_data)) + '\n' )
 
 
     def draw(self):
