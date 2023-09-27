@@ -21,3 +21,4 @@ MORESTUFF.md
 *.*~
 .vscode/**
 exported_model/**
+logs*/**

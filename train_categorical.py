@@ -1,108 +1,66 @@
-# Categorical Train - with EfficientNet Transfer Learning
+import tensorflow as tf
+from tensorflow.keras.applications import EfficientNetV2B1
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
+from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
+
 import numpy as np
 
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import Sequential
-from tensorflow.keras import layers
-import efficientnet.keras as efn
 
-from tensorflow.keras.callbacks import ModelCheckpoint
-from utils import Sample
+from utils import load_data_from_samples
 
-INPUT_SHAPE = (Sample.IMG_H, Sample.IMG_W, Sample.IMG_D)
-NUM_CLASSES = 8
+def create_efficientnet_model():
+    base_model = EfficientNetV2B1(weights='imagenet', include_top=False)
 
-def create_model(keep_prob = 0.6):
-    data_augmentation = keras.Sequential(
-    [
-        layers.experimental.preprocessing.RandomFlip("horizontal"),
-    ]
-    )
+    x = base_model.output
+    x = GlobalAveragePooling2D()(x)
 
-    base_model = keras.applications.EfficientNetB0(
-    weights="imagenet",  # Load weights pre-trained on ImageNet.
-    input_shape=INPUT_SHAPE,
-    include_top=False,
-    )  # Do not include the ImageNet classifier at the top.
+    x = Dense(1, activation='relu')(x)
 
-    # Freeze the base_model
-    # NOTE Not doing this because ... 
+    model = Model(inputs=base_model.input, outputs=x)
+
     for layer in base_model.layers:
         layer.trainable = False
 
-    # Create new model on top
-    inputs = keras.Input(shape=INPUT_SHAPE)
-    x = data_augmentation(inputs)  # Apply random data augmentation
-
-    # The base model contains batchnorm layers. We want to keep them in inference mode
-    # when we unfreeze the base model for fine-tuning, so we make sure that the
-    # base_model is running in inference mode here.
-    x = base_model(x, training=False)
-    x = keras.layers.Flatten()(x)
-    x = keras.layers.Dense(NUM_CLASSES * 4, activation = "relu")(x)
-    x = keras.layers.Dropout(1-keep_prob)(x)  # Regularize with dropout
-    outputs = keras.layers.Dense(NUM_CLASSES, activation = "sigmoid")(x)
-    x = keras.layers.Dropout(1-keep_prob)(x)  # Regularize with dropout
-    model = keras.Model(inputs, outputs)
-
-    # print(model.summary()) 
-    return model
-
-def create_model_2(keep_prob = 0.3):
-    model = efn.EfficientNetB3(input_shape = INPUT_SHAPE, include_top = False, weights = 'imagenet')
-    for layer in model.layers:
-        layer.trainable = False
-    x = model.output
-
-    x = keras.layers.BatchNormalization()(x)
-    x = keras.layers.Dropout(1-keep_prob)(x)
-
-    x = keras.layers.Dense(512)(x)
-    x = keras.layers.BatchNormalization()(x)
-    x = keras.layers.Activation('relu')(x)
-    x = keras.layers.Dropout(0.5)(x)
-
-    x = keras.layers.Dense(128)(x)
-    x = keras.layers.BatchNormalization()(x)
-    x = keras.layers.Activation('relu')(x)
-
-    # Output layer
-    predictions = keras.layers.Dense(NUM_CLASSES, activation="softmax")(x)
-
-    # Compile
-    model = keras.Model(inputs=model.input, outputs=predictions)
-
-    # print(model.summary())
     return model
 
 if __name__ == "__main__":
-    #Set GPU options
     gpus = tf.config.list_physical_devices("GPU")
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu,True)
 
-    print("loading training data")
-    x_train = np.load("data/X_a1c.npy")  
-    y_train = np.load("data/y_a1c.npy")
-    print(x_train.shape[0], 'train samples')
-    # Training loop variables
-    epochs = 100
-    batch_size = 50
+    # load data
+    paths = ["samples/forza4003", "samples/forza4004", "samples/forza4005"]
+    x, y = load_data_from_samples(paths)
 
-    # model = create_model()
-    model = create_model_2()
+    # num_bins = 15
+    # bin_edges = np.linspace(-1, 1, num_bins + 1)
+    # y_binned = np.digitize(y_float, bin_edges)
+    # y = np.eye(num_bins)[y_binned - 1]
 
-    checkpoint = ModelCheckpoint("model_weights_a1c2.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-    callbacks_list = [checkpoint]
-    
-    model.compile(
-    optimizer=keras.optimizers.Adam(),
-    # loss=keras.losses.BinaryCrossentropy(from_logits=True),
-    loss=keras.losses.SparseCategoricalCrossentropy(),
-    # loss=keras.losses.MeanSquaredError(),
-    metrics=[keras.metrics.CategoricalAccuracy()],
-    )
-    model.build(x_train.shape)
-    print(model.summary()) # NOTE we are not fine tuning the model TODO have to do it
-    model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_split=0.2, callbacks=callbacks_list)
+    # create model
+    model = create_efficientnet_model()
+    model.load_weights("model_weights_E0.h5")
+    print(model.summary())
+    '''
+    # compile model
+    checkpoint0 = ModelCheckpoint("model_weights_E0.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    tensorboard0 = TensorBoard(log_dir="logs_E/", histogram_freq=0, write_graph=True, write_images=True)
+    model.compile(optimizer='adam', loss="mse", metrics=[])
+
+    # train model
+    model.fit(x, y, epochs=5, batch_size=64, validation_split=0.2, callbacks=[checkpoint0, tensorboard0])
+    '''
+
+    # fine-tune model
+    checkpoint = ModelCheckpoint("model_weights_E0.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    tensorboard = TensorBoard(log_dir="logs_E/", histogram_freq=0, write_graph=True, write_images=True)
+    callbacks_list = [checkpoint, tensorboard]
+
+    for layer in model.layers:
+        layer.trainable = True
+    model.compile(optimizer='adam', loss='mse', metrics=[])
+    model.fit(x, y, epochs=10, batch_size=8, validation_split=0.2, callbacks=callbacks_list)
+
+

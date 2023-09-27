@@ -336,8 +336,10 @@ def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=
     # plot predictions
     if predictions and (not categorical) and (not mediapipe):
         from train import commaai_model, create_model, create_new_model
+        from train_categorical import create_efficientnet_model
         # load model
-        model = create_model(keep_prob=1.0)
+        # model = create_model(keep_prob=1.0)
+        model = create_efficientnet_model()
         model.load_weights(model_pth)
         # predict
         y_preds = []
@@ -358,8 +360,8 @@ def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu,True)
         # load model
-        # model = categorical_model()
-        model = autoencoder_model()
+        model = categorical_model()
+        # model = autoencoder_model()
         model.load_weights(model_pth)
         # predict
         y_preds = []
@@ -610,7 +612,7 @@ def prepare(samples, augment=True):
     
     return
 
-def load_data_from_samples(paths):
+def load_data_from_samples(paths, augment=True, debug=False):
     INPUT_SHAPE = (Sample.IMG_H, Sample.IMG_W, Sample.IMG_D)
 
     # for each path, load y data from data.csv
@@ -623,6 +625,8 @@ def load_data_from_samples(paths):
             num_samples += sum(1 for _line in f)
     
     # initialize x and y arrays
+    if augment:
+        num_samples *= 2 # left/right
     x = np.empty((num_samples, INPUT_SHAPE[0], INPUT_SHAPE[1], INPUT_SHAPE[2]), dtype=np.float32)
     y = np.empty((num_samples), dtype=np.float32)
 
@@ -637,10 +641,10 @@ def load_data_from_samples(paths):
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 # resize image
                 img = cv2.resize(img, (INPUT_SHAPE[1], INPUT_SHAPE[0]))
-                # if i % 500 == 0:
-                #     plt.imshow(img)
-                #     plt.title(tokens[1]+" "+str(i))
-                #     plt.show()
+                if debug and i % 500 == 0:
+                    plt.imshow(img)
+                    plt.title(tokens[1]+" "+str(i))
+                    plt.show()
                 img = img.astype(np.float32)
                 img = img / 127.5 - 1.0
                 x[i] = img
