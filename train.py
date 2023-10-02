@@ -11,6 +11,8 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Flatten, Lambda, ELU
 from tensorflow.keras.layers import Conv2D, Convolution2D, Conv2DTranspose
+from tensorflow.keras.layers import TimeDistributed
+from tensorflow.keras.utils import Sequence
 from tensorflow.keras import optimizers, Model, Input
 from tensorflow.keras import backend as K
 from tensorflow.keras.callbacks import ModelCheckpoint
@@ -33,7 +35,6 @@ def customized_loss(y_true, y_pred, loss='euclidean'):
     elif loss == 'euclidean':
         val = K.sqrt(K.sum(K.square(y_pred-y_true), axis=-1))
     return val
-
 
 def create_model(keep_prob = 0.1):
     model = Sequential()
@@ -126,6 +127,95 @@ def categorical_model(keep_prob=0.8):
     angle_out = Dense(15, activation='softmax', name='angle_out')(x)
     model = Model(inputs=[img_in], outputs=[angle_out], name='categorical')
     return model
+
+def sequence_categorical_model(keep_prob=0.8, seq_len=5):
+    drop = 1 - keep_prob
+    seq_input_shape = (seq_len, INPUT_SHAPE[0], INPUT_SHAPE[1], INPUT_SHAPE[2])
+    seq_in = Input(shape=seq_input_shape, name='img_seq_in')
+    x = TimeDistributed(Conv2D(24, 5, 2, padding='same'))(seq_in)
+    x = TimeDistributed(Dropout(drop))(x)
+    x = TimeDistributed(Conv2D(32, 5, 2, padding='same'))(x)
+    x = TimeDistributed(Dropout(drop))(x)
+    x = TimeDistributed(Conv2D(64, 5, 2, padding='same'))(x)
+    x = TimeDistributed(Dropout(drop))(x)
+    x = TimeDistributed(Conv2D(64, 3, 2, padding='same'))(x)
+    x = TimeDistributed(Dropout(drop))(x)
+    x = TimeDistributed(Flatten())(x)
+    x = TimeDistributed(Dense(100, activation='relu'))(x)
+    x = TimeDistributed(Dropout(drop))(x)
+    x = TimeDistributed(Dense(50, activation='relu'))(x)
+    x = TimeDistributed(Dropout(drop))(x)
+    # Categorical output of the angle into 15 bins
+    x = TimeDistributed(Dense(15, activation='softmax'))(x)
+    # Take the last time distributed output
+    angle_out = Lambda(lambda x: x[:, -1], output_shape=(15,))(x)
+    model = Model(inputs=[seq_in], outputs=[angle_out], name='seq_categorical')
+    return model
+
+class CustomDataGenerator(Sequence):
+    def __init__(self, x_train, y_train, batch_size=32, seq_length=5):
+        self.x_train = x_train
+        self.y_train = y_train
+        self.batch_size = batch_size
+        self.seq_length = seq_length
+        self.num_samples = x_train.shape[0]
+        self.num_classes = y_train.shape[1]
+        self.indexes = np.arange(self.seq_length, self.num_samples)
+
+    def __len__(self):
+        return int(np.ceil((self.num_samples - self.seq_length + 1) / self.batch_size))
+
+    def __getitem__(self, index):
+        start_idx = index * self.batch_size
+        end_idx = (index + 1) * self.batch_size
+        batch_indexes = self.indexes[start_idx:end_idx]
+        x_batch = []
+        y_batch = []
+
+        for i in batch_indexes:
+            sequence_x = self.x_train[i - self.seq_length + 1:i + 1]
+            x_batch.append(sequence_x)
+            y_batch.append(self.y_train[i])
+
+        return np.array(x_batch), np.array(y_batch)
+
+def train_sequence_categorical_model(x_train, y_train, _model=sequence_categorical_model, batch_size=128, epochs=10):
+    # Binning and one-hot encoding
+    # Inputs are sequences of images (5 images each)
+    print("Binning and one-hot encoding")
+    num_bins = 15
+    bin_edges = np.linspace(-1, 1, num_bins)
+    y_binned = np.digitize(y_train, bin_edges)
+    print(f"[DEBUG] bin_edges: {bin_edges}]")
+    y = np.eye(num_bins)[y_binned - 1] 
+    print("y_train shape: ", y_train.shape)
+    # Reshape X to sequences of images
+    seq_len = 5
+
+    # get 20% of data for validation
+    y_train = y[:int(len(y)*0.8)]
+    y_val = y[int(len(y)*0.8):]
+
+    x_train = x_train[:int(len(x_train)*0.8)]
+    x_val = x_train[int(len(x_train)*0.8):]
+
+    # use TF Dataset API to create generator (no duplicate data)
+    train_generator= CustomDataGenerator(x_train, y_train, batch_size=batch_size, seq_length=seq_len)
+    val_generator = CustomDataGenerator(x_val, y_val, batch_size=batch_size, seq_length=seq_len)
+    # x_train = x_train_new
+    # print("x_train shape: ", x_train.shape)
+
+    # Train model
+    model = _model()
+    
+    checkpoint = ModelCheckpoint("model_weights_seq_c1.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    callbacks_list = [checkpoint]
+
+    # default lr=0.001, make it smaller
+    model.compile(loss="categorical_crossentropy", optimizer=optimizers.Adam(lr=0.00002))
+    print(model.summary())
+    model.fit(train_generator, epochs=epochs, shuffle=True, validation_data=val_generator, callbacks=callbacks_list)
+
 
 def autoencoder_model():
     drop = 0.2
@@ -236,7 +326,7 @@ if __name__ == '__main__':
         tf.config.experimental.set_memory_growth(gpu,True)
 
     # model summary picture
-    # tf.keras.utils.plot_model(autoencoder_model(), to_file='model.png', show_shapes=True)
+    # tf.keras.utils.plot_model(sequence_categorical_model(), to_file='model.png', show_shapes=True)
     # exit()
 
     
@@ -244,7 +334,7 @@ if __name__ == '__main__':
     print("loading training data")
     # x_train = np.load("data/x_sbal.npy")
     # y_train = np.load("data/y_sbal.npy")
-    x_train, y_train = load_data_from_samples(["samples/forza4003", "samples/forza4004", "samples/forza4005"])
+    x_train, y_train = load_data_from_samples(['samples/forza4003', 'samples/forza4004', 'samples/forza4005'], debug=True, augment=True)
 
     print(x_train.shape[0], 'train samples')
 
@@ -254,7 +344,7 @@ if __name__ == '__main__':
 
     # Train model
     # train_model(x_train, y_train, _model=create_model, batch_size=batch_size, epochs=epochs)
-    # train_categorical_model(x_train, y_train, _model=categorical_model, batch_size=batch_size, epochs=epochs)
-    train_autoencoder_model(x_train, y_train, _model=autoencoder_model, batch_size=batch_size, epochs=epochs)
-
+    train_categorical_model(x_train, y_train, _model=categorical_model, batch_size=batch_size, epochs=epochs)
+    # train_autoencoder_model(x_train, y_train, _model=autoencoder_model, batch_size=batch_size, epochs=epochs)
+    # train_sequence_categorical_model(x_train, y_train, _model=sequence_categorical_model, batch_size=batch_size, epochs=epochs)
     

@@ -419,6 +419,44 @@ def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=
         raise ValueError(f'Invalid arguments: predictions={predictions}, categorical={categorical}, mediapipe={mediapipe}')
     plt.show()
 
+def seq_plotpreds(data_pths, model_pth, categorical=True, seq_len=5):
+    # check if model exists
+    if os.path.exists(model_pth):
+        print(f"Model {model_pth} found")
+    else:
+        raise FileNotFoundError(f"Model {model_pth} not found")
+    
+    seq_len = int(seq_len)
+
+    print(data_pths)
+    x, y = load_data_from_samples(eval(data_pths), augment=False)
+
+    # open model
+    from train import sequence_categorical_model
+    model = sequence_categorical_model(seq_len=seq_len)
+    model.load_weights(model_pth)
+
+    # predict
+    y_preds = []
+    t0 = time.perf_counter()
+    for i in range(seq_len, len(x)):
+        print(i, "/", len(x)-1, end="\r")
+        # take last seq_len images
+        y_pred = model.predict(np.expand_dims(x[i-seq_len:i], axis=0), batch_size=1)[0]
+
+        # covert from idx to float
+        y_pred = np.argmax(y_pred) / 7.0 - 1.0
+
+        y_preds.append(y_pred)
+    t1 = time.perf_counter()
+
+    print("time per prediction:", (t1-t0)/len(x), "seconds")
+
+    # plot
+    plt.plot(y_preds)
+    plt.plot(y[seq_len:])
+    plt.show()
+
 def show_pic(x_pth, idx=0):
     # load only one image from samples
     samples = eval(input("Enter sample paths to load: "))
@@ -649,6 +687,17 @@ def load_data_from_samples(paths, augment=True, debug=False):
                 img = img / 127.5 - 1.0
                 x[i] = img
                 y[i] = float(tokens[1])
+                if augment:
+                    # flip image
+                    img = cv2.flip(img, 1)
+                    # new index to save at is i + num_samples/2
+                    x[i + num_samples//2] = img
+                    y[i + num_samples//2] = -float(tokens[1])
+                    if debug and i % 500 == 0:
+                        plt.imshow(img)
+                        new_steering_str = "F"+str(-float(tokens[1]))
+                        plt.title(new_steering_str+" "+str(i + num_samples//2))
+                        plt.show()
                 print(f"sample {i} of {num_samples}", end="\r")
                 i += 1
     
@@ -703,9 +752,11 @@ if __name__ == '__main__':
         plot_data(y_pth=sys.argv[2])
     elif sys.argv[1] == 'plotpredictions':
         plot_data(y_pth=sys.argv[2], predictions=True, model_pth=sys.argv[3], x_pth=sys.argv[4], categorical=(sys.argv[5]))
+    elif sys.argv[1] == 'seqplotpreds':
+        seq_plotpreds(sys.argv[2], sys.argv[3], categorical=True, seq_len=sys.argv[4])
     elif sys.argv[1] == 'show':
         show_pic(sys.argv[2], int(sys.argv[3]))
     elif sys.argv[1] == 'sort':
         build_sorted_dataset(sys.argv[2], sys.argv[3:])
     else:
-        print("(viewer|prepare|balance|plot|plotpredictions|show|sort)")
+        print("(viewer|prepare|balance|plot|plotpredictions|seqplotpreds|show|sort)")
