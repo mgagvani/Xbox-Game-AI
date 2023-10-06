@@ -157,10 +157,10 @@ class Actor(object):
                 print(f"ERROR: Last angle is used: {-self.lastvalue}")
                 self.control_racing(joystick)
                 return
-            
+
             angle *= self.anglefactor
             self.lastvalue = angle
-            
+
             print(angle)
             if angle > self.cutoff:
                 angle = self.cutoff
@@ -169,7 +169,7 @@ class Actor(object):
             joystick = [angle, 0.3]
 
             self.control_racing(joystick)
-        
+
     def act(self, img):
 
         ## determine manual override
@@ -182,7 +182,7 @@ class Actor(object):
             ## Think
             # joystick = self.model.predict(vec, batch_size=1)[0]
             joystick = categorical_model_predict(self.model, vec)
-            
+
             print(joystick)
 
             # if len(joystick) == 8:
@@ -200,7 +200,7 @@ class Actor(object):
 
             self.control(joystick)
 
-        
+
         ## Act
         ## has been put in Think block NOTE 
 
@@ -214,7 +214,7 @@ if __name__ == '__main__':
     gpus = tf.config.list_physical_devices("GPU")
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu,True)
-    
+
     # turn on program and let it run forever
     actor = Actor()
     screenshot = Screenshotter()

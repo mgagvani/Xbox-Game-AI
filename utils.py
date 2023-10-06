@@ -38,7 +38,7 @@ class Screenshotter(object):
         self._monitor_thread.daemon = True
         self._monitor_thread.start()
         # self.ie, self.net, self.exec_net, self.output_layer_ir, self.input_layer_ir = openvino_test.start()
-        
+
     def _get_image(self):
         while True:
             time.sleep(0.02)
@@ -305,7 +305,7 @@ def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=
         print(f"Model {model_pth} found")
     else:
         raise FileNotFoundError(f"Model {model_pth} not found")
-    
+
     # load data
     # X = np.load(x_pth)
     if input("Load data from samples? (y/n): ") == "y":
@@ -404,7 +404,7 @@ def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=
             classification_result = classifier.classify(image).classifications[0]
             # for i in classification_result.categories:
             #     print(i)
-        
+
             # convert idx to float
             y_pred = float(classification_result.categories[0].index) / 7.0 - 1.0
             y_preds.append(y_pred)
@@ -422,7 +422,7 @@ def seq_plotpreds(data_pths, model_pth, categorical=True, seq_len=5):
         print(f"Model {model_pth} found")
     else:
         raise FileNotFoundError(f"Model {model_pth} not found")
-    
+
     seq_len = int(seq_len)
 
     print(data_pths)
@@ -591,7 +591,7 @@ def prepare(samples, augment=True):
         # add joystick values to y
         print(f"Joystick values shape {joystick_values.shape}")
         y.append(joystick_values)
-        
+
 
         # load, prepare and add images to X
         for image_file in image_files:
@@ -603,7 +603,7 @@ def prepare(samples, augment=True):
             # debug show image
             # plt.imshow(vec)
             # plt.show()
-            
+
             '''
             if augment:
                 ## Augmentation
@@ -644,7 +644,7 @@ def prepare(samples, augment=True):
 
     print(X.shape)
     print(np.asarray(y).shape)
-    
+
     return
 
 def load_data_from_samples(paths, augment=True, debug=False, generator=False):
@@ -658,7 +658,7 @@ def load_data_from_samples(paths, augment=True, debug=False, generator=False):
     for path in paths:
         with open(path + "/data.csv") as f:
             num_samples += sum(1 for _line in f)
-    
+
     # initialize x and y arrays
     if augment:
         num_samples *= 2 # left/right
@@ -697,7 +697,7 @@ def load_data_from_samples(paths, augment=True, debug=False, generator=False):
                         plt.show()
                 print(f"sample {i} of {num_samples}", end="\r")
                 i += 1
-    
+
                 # if generator:
                 #     yield x[i], y[i]
     # if not generator:
@@ -723,7 +723,7 @@ def build_sorted_dataset(dataset_path: str, samples_paths: list):
 
     for suffix in path_suffixes:
         os.makedirs(os.path.join(dataset_path, suffix))
-    
+
     # sort data
     # hist = plt.hist(y, bins=14)
     print("Sorting data...")

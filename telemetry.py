@@ -19,10 +19,10 @@ def save_waypoints():
     except KeyboardInterrupt:
         print("CtrlC detected, stopping ands saving")
         np.savetxt("waypoints.txt", vals)
-    
+
 def get_waypoints(print_values=False):
     generator = return_vals(PORT_NUMBER)
-    
+
     for i in generator:
         if print_values:
             print(i)
@@ -84,7 +84,7 @@ def follow_waypoints(waypoints_file="waypoints.txt"):
         except KeyboardInterrupt:
             print("Stopping due to Ctrl C Event")
             break
-    
+
 
 
 if __name__ == "__main__":
@@ -97,4 +97,3 @@ if __name__ == "__main__":
     #    # time.sleep(1) 
 
     follow_waypoints()
-        
