@@ -39,7 +39,7 @@ for x in range(0,1920-1): # since it starts at zero not one need to subtract 1 f
 
     for ki,index in enumerate(indices): # ki is index of the kernel so far
         slice_conv[x] += slice_g[index] * k[ki] 
-    
+
     # print(slice_g[x], slice_conv[x])
 
 # find transitions
@@ -72,7 +72,7 @@ for i,val in enumerate(transitions):
         # count += 1
     elif val == 1 and startx > -1: # not the first one
         endx = i
-        
+
         if endx - startx > 200:
             extents.append([startx+35,endx]) # add 35 to account for offset
             # TODO change this so it throws away first two points
@@ -173,7 +173,7 @@ for i,section in enumerate(sections):
                                            total_num_peaks=1)    
     section[2] = cv2.circle(section[2], (cx[0],cy[0]), radii[0]+1, 1, -1)
 
-    
+
 # erode for better OCR
 for section in sections:
     section[0] = cv2.erode(section[0], np.ones((2,2), np.uint8), iterations=1)
@@ -189,7 +189,7 @@ for section in sections:
     section[5] = cv2.morphologyEx(section[5], cv2.MORPH_CLOSE, np.ones((3,3)))
     plt.hist(section[5], [0,50,100,150,200,255])
     plt.show()
-        
+
 
 
 # show sections
@@ -205,7 +205,7 @@ for section in sections:
     overall = pytesseract.image_to_string(Image.fromarray(section[3].astype(np.uint8)),config=tessdata_dir_config)
     position = pytesseract.image_to_string(Image.fromarray(section[4].astype(np.uint8)),config=tessdata_dir_config)
     name = pytesseract.image_to_string(Image.fromarray(section[5].astype(np.uint8)),config=tessdata_dir_config)
-    
+
     message = f"{overall} {name} who plays {position} has {timestamp} left on auction. Winning Bid is {winning_bid} while BIN is {buy_it_now}"
     alt_message = f"""Timestamp: {timestamp}
     Winning Bid: {winning_bid}
@@ -213,9 +213,8 @@ for section in sections:
     Overall: {overall}
     Position: {position}
     Name: {name}"""
-                      
+
     print(alt_message)
-    
+
     plt.show()
 
-    

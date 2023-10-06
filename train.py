@@ -2,7 +2,7 @@
 
 
 import numpy as np
-    
+
 import tensorflow as tf
 
 from tensorflow.keras.models import Sequential
@@ -204,7 +204,7 @@ def train_sequence_categorical_model(x_train, y_train, _model=sequence_categoric
 
     # Train model
     model = _model()
-    
+
     checkpoint = ModelCheckpoint("model_weights_seq_c1.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     callbacks_list = [checkpoint]
 
@@ -245,7 +245,7 @@ def autoencoder_model():
     y = Conv2DTranspose(filters=32, kernel_size=3, strides=2,
                         name="deconv2d_5")(y)
     y = Conv2DTranspose(filters=1, kernel_size=3, strides=2, name="img_out")(y)
-    
+
     x = Flatten(name='flattened')(x)
     x = Dense(256, activation='relu')(x)
     x = Dropout(drop)(x)
@@ -255,7 +255,7 @@ def autoencoder_model():
     x = Dropout(drop)(x)
 
     angle_out = Dense(15, activation='softmax', name='angle_out')(x)
-        
+
     model = Model(inputs=[img_in], outputs=[angle_out], name="latent")
     return model
 
@@ -270,7 +270,7 @@ def train_model(x_train, y_train, _model=create_model, batch_size=128, epochs=10
 
     checkpoint = ModelCheckpoint("model_weights_bal.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     callbacks_list = [checkpoint]
-    
+
     # model.compile(loss=customized_loss, optimizer="adam")
     # model.compile(loss="mean_squared_error", optimizer="adam")
     model.compile(loss="mean_squared_error", optimizer=optimizers.SGD(lr=0.1))
@@ -328,7 +328,7 @@ if __name__ == '__main__':
     # tf.keras.utils.plot_model(sequence_categorical_model(), to_file='model.png', show_shapes=True)
     # exit()
 
-    
+
     # Load Training Data
     print("loading training data")
     # x_train = np.load("data/x_sbal.npy")
@@ -348,4 +348,3 @@ if __name__ == '__main__':
     train_categorical_model(x_train, y_train, _model=categorical_model, batch_size=batch_size, epochs=epochs)
     # train_autoencoder_model(x_train, y_train, _model=autoencoder_model, batch_size=batch_size, epochs=epochs)
     # train_sequence_categorical_model(x_train, y_train, _model=sequence_categorical_model, batch_size=batch_size, epochs=epochs)
-    

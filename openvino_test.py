@@ -24,7 +24,7 @@ def start():
 
     net = ie.read_network(model="model/road-segmentation-adas-0001.xml")
     exec_net = ie.load_network(net, "CPU")
-    
+
     output_layer_ir = next(iter(exec_net.outputs))
     input_layer_ir = next(iter(exec_net.input_info))
 
@@ -66,32 +66,32 @@ def inference(image, ie, net, exec_net, output_layer_ir, input_layer_ir, return_
     # image = cv2.imread("data/empty_road_mapillary.jpg")
     # image = read_img_from_num(int(input("Image number: ")))
     # print(type(image))
-    
+
     rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image_h, image_w, _ = image.shape
-    
+
     # N,C,H,W = batch size, number of channels, height, width
     N, C, H, W = net.input_info[input_layer_ir].tensor_desc.dims
-    
+
     # OpenCV resize expects the destination size as (width, height)
     resized_image = cv2.resize(image, (W, H))
-    
+
     # reshape to network input shape
     input_image = np.expand_dims(
         resized_image.transpose(2, 0, 1), 0
     )  
     # plt.imshow(rgb_image)
     # plt.show()
-    
+
     # Run the infernece
     result = exec_net.infer(inputs={input_layer_ir: input_image})
     result_ir = result[output_layer_ir]
-    
+
     # Prepare data for visualization
     segmentation_mask = np.argmax(result_ir, axis=1)
     # plt.imshow(segmentation_mask[0])
     # plt.show()
- 
+
     img = segmentation_mask[0]
 
     if return_image:
@@ -99,13 +99,13 @@ def inference(image, ie, net, exec_net, output_layer_ir, input_layer_ir, return_
         return resized_image
 
     x, y = find_xy(img)
-    
+
     # find first index where x = -1
     for i, xval in enumerate(x):
         if xval == -1:
             last = i
             break
-    
+
     x = x[2:last - 1] # removing first two because they are usually outliers. 
     y = y[2:last - 1] #z this can be manually tuned, for start and end
 
@@ -127,7 +127,7 @@ def inference(image, ie, net, exec_net, output_layer_ir, input_layer_ir, return_
     # COMMENT ME OUT NOTE TODO when using with play.py
     # for i, item in enumerate(x):
     #     print(f"{item}\t{y[i]}")
-    
+
     try:
         slope = (yslope[-1] - yslope[0])/(x[-1] - x[0])
     except:
@@ -146,10 +146,10 @@ def inference(image, ie, net, exec_net, output_layer_ir, input_layer_ir, return_
         angle = -1 * (90+a)/90
     else:
         return "error"
-    
+
     # angle = (x[0] - x[-1])/(y[0] - y[-1]) / 5 # NOTE This parameter should be manually tuned
     #print(angle)
-    
+
     # has to be commented out when running in play.py
     xr = list(reversed(x))
     yr = list(reversed(y))         

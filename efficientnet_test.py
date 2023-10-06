@@ -15,7 +15,7 @@ from tensorflow.keras.applications import ResNet50V2
 
 def load_data():
     image = imread("./samples/2021-05-02_17;54;46/img_191.png")
-    
+
     plt.figure(figsize=(10, 10))
     plt.imshow(image)
     plt.show()

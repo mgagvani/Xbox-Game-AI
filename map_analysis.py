@@ -63,6 +63,6 @@ while True:
     plt.imshow(img, cmap="gray")
     plt.scatter([point[0] for point in circle_points], [point[1] for point in circle_points])
     plt.hist(img.ravel(), 256, (0,256))
-    
+
     plt.show()
     i+=20
