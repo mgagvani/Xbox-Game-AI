@@ -2,7 +2,6 @@ import time
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
 from openvino.inference_engine import IECore
 import math
 

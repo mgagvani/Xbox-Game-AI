@@ -5,7 +5,6 @@ import gc
 import glob
 import time
 import os
-import random
 from PIL import Image
 import mss
 import pandas as pd
@@ -16,8 +15,6 @@ try:
 except ImportError:
     print("Cupy not installed.")
     import numpy as np
-
-from skimage.color import rgb2gray
 from skimage.transform import resize
 from skimage.io import imread
 
