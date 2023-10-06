@@ -4,7 +4,6 @@ import cv2
 import numpy as np
 
 import pytesseract
-from pytesseract import Output
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files (x86)\Tesseract-OCR\tesseract.exe'
 tessdata_dir_config = r'--tessdata-dir "C:\Program Files (x86)\Tesseract-OCR\tessdata"'
 

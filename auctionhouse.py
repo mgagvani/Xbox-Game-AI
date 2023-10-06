@@ -4,8 +4,6 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 import math
-import scipy
-from scipy import ndimage
 from skimage.transform import hough_circle, hough_circle_peaks
 
 import pytesseract

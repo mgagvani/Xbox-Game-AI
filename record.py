@@ -11,7 +11,6 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg as FigCanvas
 
 from PIL import ImageTk, Image
-import utils
 from telemetry import *
 
 import sys
@@ -29,7 +28,7 @@ else:
     import ttk
     import tkMessageBox
 
-from utils import Sample, Screenshot, XboxController, Screenshotter
+from utils import Sample, XboxController, Screenshotter
 
 IMAGE_SIZE = (1920, 1080)
 IDLE_SAMPLE_RATE = 500

@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 
 import time
-from PIL import Image
-import mss
 from mss import screenshot
 import tensorflow as tf
-from utils import Screenshot, resize_image, XboxController, Screenshotter
-import cv2
+from utils import XboxController, Screenshotter
 # from termcolor import cprint
 
 # import gym

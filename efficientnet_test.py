@@ -1,13 +1,6 @@
-import os
-import sys
 import numpy as np
 from skimage.io import imread
 import matplotlib.pyplot as plt
-from PIL import Image
-
-# EfficientNet
-
-import tensorflow
 from tensorflow.keras.applications.imagenet_utils import decode_predictions as decode_efnet
 
 from efficientnet.tfkeras import EfficientNetB0
