@@ -15,7 +15,7 @@ from tensorflow.keras.layers import TimeDistributed
 from tensorflow.keras.utils import Sequence
 from tensorflow.keras import optimizers, Model, Input
 from tensorflow.keras import backend as K
-from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 from utils import Sample, load_data_from_samples
 
 # Global variable
@@ -284,15 +284,17 @@ def train_categorical_model(x_train, y_train, _model=categorical_model, batch_si
     # Binning and one-hot encoding
     print("Binning and one-hot encoding")
     num_bins = 15
-    bin_edges = np.linspace(-1, 1, num_bins + 1)
-    y_binned = np.digitize(y_train, bin_edges)
-    y_train = np.eye(num_bins)[y_binned - 1] 
-    print("y_train shape: ", y_train.shape)
+    # bin_edges = np.linspace(-1, 1, num_bins + 1)
+    # y_binned = np.digitize(y_train, bin_edges)
+    # y_train = np.eye(num_bins)[y_binned - 1] 
+    # print("y_train shape: ", y_train.shape)
+    y_train = tf.keras.utils.to_categorical(y_train, num_bins)
 
     model = _model()
 
-    checkpoint = ModelCheckpoint("model_weights_c1.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-    callbacks_list = [checkpoint]
+    checkpoint = ModelCheckpoint("model_weights_c2a.h5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    tensorboard = TensorBoard(log_dir="logs_C/", histogram_freq=0, write_graph=True, write_images=True)
+    callbacks_list = [checkpoint, tensorboard]
 
     # default lr=0.001, make it smaller
     model.compile(loss="categorical_crossentropy", optimizer=optimizers.Adam(lr=0.00002))
@@ -334,7 +336,9 @@ if __name__ == '__main__':
     print("loading training data")
     # x_train = np.load("data/x_sbal.npy")
     # y_train = np.load("data/y_sbal.npy")
-    x_train, y_train = load_data_from_samples(['samples/forza4003', 'samples/forza4004', 'samples/forza4005'], debug=True, augment=True)
+    # samples = ['samples/forza4003', 'samples/forza4004', 'samples/forza4005']
+    samples = ['samples/forza4003']
+    x_train, y_train = load_data_from_samples(samples, debug=False, augment=True)
 
     print(x_train.shape[0], 'train samples')
 

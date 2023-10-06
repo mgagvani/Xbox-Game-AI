@@ -179,34 +179,12 @@ class Actor(object):
         manual_override = self.real_controller.RightThumb == 1
 
         if not manual_override:
-        # if True:
             ## Look
-            # print("debug")
-            # print(img)
             vec = img
             vec = np.expand_dims(vec, axis=0) # expand dimensions for predict, it wants (1,66,200,3) not (66, 200, 3)
             ## Think
             # joystick = self.model.predict(vec, batch_size=1)[0]
             joystick = categorical_model_predict(self.model, vec)
-            
-            # for i,num in enumerate(joystick):
-            #     if joystick[i] >= self.thresh: # predicting 1, positive
-            #         joystick[i] = 1
-            #     elif -self.thresh < joystick[i] < self.thresh: # predicting 0, nothing
-            #         joystick[i] = 0
-            #     elif joystick[i] <= -self.thresh: # predicting -1, negative
-            #         joystick[i] = -1
-            #     else:
-            #         print("Error")
-
-            # joystick = joystick * 3
-            # for i,num in enumerate(joystick):
-            #     if joystick[i] > 1:
-            #         joystick[i] = 1
-            #     elif joystick[i] < -1:
-            #         joystick[i] = -1
-            #     else:
-            #         pass
             
             print(joystick)
 
@@ -235,7 +213,7 @@ if __name__ == '__main__':
     kernel32 = ctypes.windll.kernel32
     kernel32.SetThreadPriority(kernel32.GetCurrentThread(), 31) 
 
-    #disable gpu
+    #disable gpu memory growth
     gpus = tf.config.list_physical_devices("GPU")
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu,True)

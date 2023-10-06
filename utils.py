@@ -298,7 +298,7 @@ def ask_for_samples():
     # ask for samples
     samples = eval(input("Enter sample paths to load: "))
     # load data
-    return load_data_from_samples(samples)
+    return load_data_from_samples(samples, augment=False)
 
 def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=False):
     categorical = True if categorical == "y" else False
@@ -365,9 +365,9 @@ def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=
         model.load_weights(model_pth)
         # predict
         y_preds = []
-        t0 = time.perf_counter()
+        t0 = time.perf_counter(); y_pred = 0
         for i, x in enumerate(X):
-            print(i, "/", len(X)-1, end="\r")
+            print(i, "/", len(X)-1, y_pred, end="\r")
             y_pred = categorical_model_predict(model, np.expand_dims(x, axis=0))
             y_preds.append(y_pred)
         t1 = time.perf_counter()
@@ -650,7 +650,7 @@ def prepare(samples, augment=True):
     
     return
 
-def load_data_from_samples(paths, augment=True, debug=False):
+def load_data_from_samples(paths, augment=True, debug=False, generator=False):
     INPUT_SHAPE = (Sample.IMG_H, Sample.IMG_W, Sample.IMG_D)
 
     # for each path, load y data from data.csv
@@ -679,12 +679,12 @@ def load_data_from_samples(paths, augment=True, debug=False):
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 # resize image
                 img = cv2.resize(img, (INPUT_SHAPE[1], INPUT_SHAPE[0]))
+                img = img.astype(np.float32)
+                img /= 255.0
                 if debug and i % 500 == 0:
                     plt.imshow(img)
                     plt.title(tokens[1]+" "+str(i))
                     plt.show()
-                img = img.astype(np.float32)
-                img = img / 127.5 - 1.0
                 x[i] = img
                 y[i] = float(tokens[1])
                 if augment:
@@ -701,7 +701,12 @@ def load_data_from_samples(paths, augment=True, debug=False):
                 print(f"sample {i} of {num_samples}", end="\r")
                 i += 1
     
+                # if generator:
+                #     yield x[i], y[i]
+    # if not generator:
+    #     return x, y
     return x, y
+
 
 def build_sorted_dataset(dataset_path: str, samples_paths: list):
     # build sorted dataset at samples/path
