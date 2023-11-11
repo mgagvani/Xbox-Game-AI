@@ -88,7 +88,48 @@ def plot_speed_2d():
     plt.gca().invert_yaxis()  # Invert Y axis to match typical coordinate systems
     plt.show()
 
+def live_plot():
+    import sys, matplotlib
+    sys.path.append('forza_motorsport/')
+    from data2file import return_vals
+    # matplotlib.use('GTK4Agg')
+
+    rw = return_vals(2560)
+
+    # continuously growing line polot
+    plt.ion()
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_xlabel('Frame')
+    ax.set_ylabel('Value')
+    ax.set_title('Variable')
+    line1 = ax.plot([], [], 'r-')[0]
+    # line2 = ax.plot([], [], 'b-')[0] # steer
+    line3 = ax.plot([], [], 'g-')[0]
+    line4 = ax.plot([], [], 'k-')[0]
+    lines = [line1, line3, line4]
+
+    # legend
+    ax.legend(lines, ["norm_driving_line", "accel", "brake"])
+
+    x = 0
+    while True:
+        x += 1
+        for i, line in enumerate(lines):
+            line.set_xdata(np.append(line.get_xdata(), x))
+            line.set_ydata(np.append(line.get_ydata(), next(rw)[i]))
+        
+        ax.relim()
+        ax.autoscale_view()
+        fig.canvas.draw()
+        fig.canvas.flush_events()
+        plt.pause(0.001)
+
+    
+
 if __name__ == "__main__":
+    live_plot()
+
     plot_variables(["steer", "accel", "brake", "speed", "norm_driving_line"])
 
     plot_speed_2d()
