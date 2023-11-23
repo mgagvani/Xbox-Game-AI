@@ -127,14 +127,9 @@ class Actor(object):
         self.controller.set_value("BtnA",joystick[6])
         self.controller.set_value("BtnX",joystick[7])
 
-    def control_racing(self, joystick):
-        if type(joystick) is not float:
-            self.controller.set_value("AxisLx", joystick)
-            return
+    def control_racing(self, joystick: list):
         self.controller.set_value("AxisLx",joystick[0])
-        if len(joystick) == 2:
-            self.controller.set_value("TriggerL",joystick[1])
-        # self.controller.set_value("TriggerR", 0.5)
+        self.controller.set_value("TriggerR",joystick[1])
 
     def control_throttle(self, throttle):
         manual_override = self.real_controller.RightThumb == 1

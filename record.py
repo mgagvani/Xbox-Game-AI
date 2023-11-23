@@ -15,6 +15,9 @@ from telemetry import *
 
 import sys
 
+sys.path.append("forza_motorsport/")
+from data2file import return_vals # TODO cleanup w/ telemetry.py
+
 PY3_OR_LATER = sys.version_info[0] >= 3
 
 if PY3_OR_LATER:
@@ -51,7 +54,7 @@ class MainWindow():
         self.controller = XboxController()
 
         # Init telemetry
-        self.telemetry = get_waypoints()
+        self.telemetry = return_vals(PORT_NUMBER) # default args
 
          # Create GUI
         self.create_main_panel()
@@ -124,10 +127,18 @@ class MainWindow():
         self.update_plot()
 
         if self.recording == True:
+            try:
+                self.telem_data = next(self.telemetry)
+                # print(f"[DEBUG] telem data: {self.telem_data}")
+            except Exception as err:
+                # telem data is empty because currently not streaming
+                print(f"not getting telem data... ({err})")
+                self.telem_data = []
+
+
             self.save_data()
             self.t += 1        
 
-        self.telem_data = next(self.telemetry)
 
     def update_plot(self):
         self.plotData.append(self.controller_data) # adds to the end of the list
@@ -189,6 +200,8 @@ class MainWindow():
             self.t = 0 # Reset our counter for the new recording
             self.record_button["text"] = "Stop"
             self.rate = self.sample_rate
+            # make telemetry (generator)
+            # self.telemetry = get_waypoints()
             # make / open outfile
             self.outfile = open(self.outputDir+'/'+'data.csv', 'a')
         else:

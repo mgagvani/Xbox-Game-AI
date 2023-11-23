@@ -128,7 +128,7 @@ def live_plot():
     
 
 if __name__ == "__main__":
-    live_plot()
+    # live_plot()
 
     plot_variables(["steer", "accel", "brake", "speed", "norm_driving_line"])
 

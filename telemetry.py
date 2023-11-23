@@ -1,4 +1,5 @@
 import sys
+from typing import Any
 sys.path.append("forza_motorsport/")
 
 import numpy as np
@@ -53,6 +54,52 @@ def pid_throttle():
             print("Stopping due to Ctrl C Event")
             break
 
+class pid_steer_throttle():
+    MPH_TO_MPS = 0.44704
+
+    def __init__(self):
+        self.SPEED = 20 * self.MPH_TO_MPS # m/s
+        self.throttle_pid = PID(1, 1, 1, setpoint=self.SPEED)
+        self.throttle_pid.output_limits = (0, 1)
+        self.speed = 0
+
+        self.SETPOINT = 0 # center of the road
+        self.S_KP = 0.5 / 127.0
+        self.S_KI = 0.00001
+        self.S_KD = 0.25
+        self.steer_pid = PID(self.S_KP, self.S_KI, self.S_KD, setpoint=self.SETPOINT)
+        self.steer_pid.output_limits = (-1, 1)
+        self.norm_driving_line = 0
+
+        self.generator = return_vals(PORT_NUMBER) # norm_driving_line, speed
+
+        self.actor = Actor(load_model=False)
+        
+    def __update(self):
+        data = next(self.generator)
+        self.speed = data[-1]
+        self.norm_driving_line = data[0]
+        assert type(self.speed) is float and type(self.norm_driving_line) in (float, int), f"Error (Assert): {self.speed}, {self.norm_driving_line}"
+
+        steer =  - self.steer_pid(self.norm_driving_line)
+        throttle = self.throttle_pid(self.speed)
+
+        # debug - print current steer, norm_driving_line
+        print(f"Steer: {steer}, Norm Driving Line: {self.norm_driving_line}, data: {data}")
+    
+        return steer, throttle
+    
+    def __call__(self) -> Any:
+        while True:
+            try:
+                steer, throttle = self.__update()
+                self.actor.control_racing([steer, throttle])
+            except KeyboardInterrupt:
+                print("Stopping due to Ctrl C Event")
+                break
+            # except Exception as e:
+            #     print(f"Error (Loop): {e}")
+    
 def follow_waypoints(waypoints_file="waypoints.txt"):
     actor = Actor(load_model=False)
 
@@ -90,10 +137,11 @@ def follow_waypoints(waypoints_file="waypoints.txt"):
 if __name__ == "__main__":
     # save_waypoints()
     # pid_throttle()
+    pid_steer_throttle()() # this is so funny
 
     #for i in get_waypoints(print_values=False):
     #    x, y, z, speed = i
     #    print(f"x: {x}, y: {y}, z: {z}, speed: {speed}")
     #    # time.sleep(1) 
 
-    follow_waypoints()
+    # follow_waypoints()
