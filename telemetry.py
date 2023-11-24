@@ -58,15 +58,15 @@ class pid_steer_throttle():
     MPH_TO_MPS = 0.44704
 
     def __init__(self):
-        self.SPEED = 20 * self.MPH_TO_MPS # m/s
+        self.SPEED = 40 * self.MPH_TO_MPS # m/s
         self.throttle_pid = PID(1, 1, 1, setpoint=self.SPEED)
         self.throttle_pid.output_limits = (0, 1)
         self.speed = 0
 
         self.SETPOINT = 0 # center of the road
-        self.S_KP = 0.5 / 127.0
-        self.S_KI = 0.00001
-        self.S_KD = 0.25
+        self.S_KP = 0.50 / 127.0
+        self.S_KI = 0.64 / 127.0
+        self.S_KD = 32.0 / 127.0
         self.steer_pid = PID(self.S_KP, self.S_KI, self.S_KD, setpoint=self.SETPOINT)
         self.steer_pid.output_limits = (-1, 1)
         self.norm_driving_line = 0
