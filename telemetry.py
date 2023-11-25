@@ -100,7 +100,7 @@ class pid_steer_throttle():
 
         # debug - print current steer, norm_driving_line
         # print(f"Steer: {steer}, Norm Driving Line: {self.norm_driving_line}, data: {data}")
-        print(f"Speed: {self.speed}, Velocity: {v}, AngVelocity: {w}, Radius: {radius}")
+        print(f"Velocity: {v}, AngVelocity: {w}, Radius: {radius}")
     
         return steer, throttle
     
@@ -150,13 +150,4 @@ def follow_waypoints(waypoints_file="waypoints.txt"):
 
 
 if __name__ == "__main__":
-    # save_waypoints()
-    # pid_throttle()
-    pid_steer_throttle()() # this is so funny
-
-    #for i in get_waypoints(print_values=False):
-    #    x, y, z, speed = i
-    #    print(f"x: {x}, y: {y}, z: {z}, speed: {speed}")
-    #    # time.sleep(1) 
-
-    # follow_waypoints()
+    pid_steer_throttle()()
