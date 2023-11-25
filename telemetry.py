@@ -58,34 +58,49 @@ class pid_steer_throttle():
     MPH_TO_MPS = 0.44704
 
     def __init__(self):
-        self.SPEED = 40 * self.MPH_TO_MPS # m/s
+        self.SPEED = 75 * self.MPH_TO_MPS # m/s
         self.throttle_pid = PID(1, 1, 1, setpoint=self.SPEED)
         self.throttle_pid.output_limits = (0, 1)
         self.speed = 0
 
         self.SETPOINT = 0 # center of the road
-        self.S_KP = 0.50 / 127.0
-        self.S_KI = 0.64 / 127.0
-        self.S_KD = 32.0 / 127.0
+        self.S_KP = 4.0 / 127.0
+        self.S_KI = 0.5 / 127.0
+        self.S_KD = 8.0 / 127.0
         self.steer_pid = PID(self.S_KP, self.S_KI, self.S_KD, setpoint=self.SETPOINT)
         self.steer_pid.output_limits = (-1, 1)
         self.norm_driving_line = 0
 
         self.generator = return_vals(PORT_NUMBER) # norm_driving_line, speed
 
+        self.v_x, self.v_y, self.v_z = 0, 0, 0 # linear velocity
+        self.w_x, self.w_y, self.w_z = 0, 0, 0 # angular velocity
+
+        # if radius of curvature is less than, we are turning hard (close to turning circle)
+        # so cut the throttle
+        self.RADIUS_THRESH = 35 # m
+
         self.actor = Actor(load_model=False)
         
     def __update(self):
         data = next(self.generator)
-        self.speed = data[-1]
+        self.speed = data[1]
         self.norm_driving_line = data[0]
+        self.v_x, self.v_y, self.v_z = data[5:8]
+        self.w_x, self.w_y, self.w_z = data[2:5]
         assert type(self.speed) is float and type(self.norm_driving_line) in (float, int), f"Error (Assert): {self.speed}, {self.norm_driving_line}"
 
+        # instantaneous radius of curvature
+        v = np.linalg.norm([self.v_x, self.v_y, self.v_z])
+        w = np.linalg.norm([self.w_x, self.w_y, self.w_z])
+        radius = v / w if w != 0 else 0
+        
         steer =  - self.steer_pid(self.norm_driving_line)
-        throttle = self.throttle_pid(self.speed)
+        throttle = self.throttle_pid(self.speed) if radius > self.RADIUS_THRESH else 0
 
         # debug - print current steer, norm_driving_line
-        print(f"Steer: {steer}, Norm Driving Line: {self.norm_driving_line}, data: {data}")
+        # print(f"Steer: {steer}, Norm Driving Line: {self.norm_driving_line}, data: {data}")
+        print(f"Speed: {self.speed}, Velocity: {v}, AngVelocity: {w}, Radius: {radius}")
     
         return steer, throttle
     
