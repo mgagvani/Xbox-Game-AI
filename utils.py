@@ -98,7 +98,7 @@ class Screenshot(object):
 
 class Sample(object):
     IMG_W = 240 # 480
-    IMG_H = 135 # 270 
+    IMG_H = 20 # 270 # 135 # crop bottom and top (unimportant parts)
     # IMG_W = 300
     # IMG_H = 300
     IMG_D = 3
@@ -335,8 +335,8 @@ def plot_data(y_pth, predictions=False, model_pth=None, x_pth=None, categorical=
         from train import commaai_model, create_model, create_new_model
         from train_categorical import create_efficientnet_model
         # load model
-        # model = create_model(keep_prob=1.0)
-        model = create_efficientnet_model()
+        model = create_model(keep_prob=1.0)
+        # model = create_efficientnet_model()
         model.load_weights(model_pth)
         # predict
         y_preds = []
@@ -648,7 +648,7 @@ def prepare(samples, augment=True):
     return
 
 def load_data_from_samples(paths, augment=True, debug=False, generator=False):
-    INPUT_SHAPE = (Sample.IMG_H, Sample.IMG_W, Sample.IMG_D)
+    INPUT_SHAPE = (135, Sample.IMG_W, Sample.IMG_D)
 
     # for each path, load y data from data.csv
     # 1st column is picture path, 2nd column is steering angle

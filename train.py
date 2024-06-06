@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Flatten, Lambda, ELU
-from tensorflow.keras.layers import Conv2D, Convolution2D, Conv2DTranspose
+from tensorflow.keras.layers import Conv2D, Convolution2D, Conv2DTranspose, Cropping2D
 from tensorflow.keras.layers import TimeDistributed
 from tensorflow.keras.utils import Sequence
 from tensorflow.keras import optimizers, Model, Input
@@ -36,12 +36,15 @@ def customized_loss(y_true, y_pred, loss='euclidean'):
 def create_model(keep_prob = 0.1):
     model = Sequential()
 
+    # crop
+    model.add(Cropping2D(cropping=((75, 40), (0, 0)), input_shape=(135, 240, 3)))
+
     # NVIDIA's model
     model.add(Conv2D(24, kernel_size=(5, 5), strides=(2, 2), activation='relu', input_shape= INPUT_SHAPE))
     model.add(Conv2D(36, kernel_size=(5, 5), strides=(2, 2), activation='relu'))
-    model.add(Conv2D(48, kernel_size=(5, 5), strides=(2, 2), activation='relu'))
-    model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
-    model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
+    # model.add(Conv2D(48, kernel_size=(5, 5), strides=(2, 2), activation='relu'))
+    # model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
+    # model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
     model.add(Flatten())
     model.add(Dense(1164, activation='relu'))
     drop_out = 1 - keep_prob
@@ -273,7 +276,7 @@ def train_model(x_train, y_train, _model=create_model, batch_size=128, epochs=10
 
     # model.compile(loss=customized_loss, optimizer="adam")
     # model.compile(loss="mean_squared_error", optimizer="adam")
-    model.compile(loss="mean_squared_error", optimizer=optimizers.SGD(lr=0.1))
+    model.compile(loss="mean_squared_error", optimizer=optimizers.SGD(lr=0.01))
     print(model.summary())
     model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_split=0.2, callbacks=callbacks_list)
 
@@ -325,7 +328,7 @@ if __name__ == '__main__':
         tf.config.experimental.set_memory_growth(gpu,True)
 
     # model summary picture
-    # tf.keras.utils.plot_model(sequence_categorical_model(), to_file='model.png', show_shapes=True)
+    # tf.keras.utils.plot_model(create_model(), to_file='model.png', show_shapes=True)
     # exit()
 
 
@@ -333,18 +336,18 @@ if __name__ == '__main__':
     print("loading training data")
     # x_train = np.load("data/x_sbal.npy")
     # y_train = np.load("data/y_sbal.npy")
-    # samples = ['samples/forza4003', 'samples/forza4004', 'samples/forza4005']
-    samples = ['samples/forza4003']
-    x_train, y_train = load_data_from_samples(samples, debug=False, augment=True)
+    samples = ['samples/forza4003', 'samples/forza4004', 'samples/forza4005']
+    # samples = ['samples/forza4003']
+    x_train, y_train = load_data_from_samples(samples, debug=False, augment=False)
 
     print(x_train.shape[0], 'train samples')
 
     # Training loop variables
     epochs = 200
-    batch_size = 256  
+    batch_size = 192  
 
     # Train model
-    # train_model(x_train, y_train, _model=create_model, batch_size=batch_size, epochs=epochs)
-    train_categorical_model(x_train, y_train, _model=categorical_model, batch_size=batch_size, epochs=epochs)
+    train_model(x_train, y_train, _model=create_model, batch_size=batch_size, epochs=epochs)
+    # train_categorical_model(x_train, y_train, _model=categorical_model, batch_size=batch_size, epochs=epochs)
     # train_autoencoder_model(x_train, y_train, _model=autoencoder_model, batch_size=batch_size, epochs=epochs)
     # train_sequence_categorical_model(x_train, y_train, _model=sequence_categorical_model, batch_size=batch_size, epochs=epochs)
